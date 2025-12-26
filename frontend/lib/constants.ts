@@ -16,7 +16,8 @@ export const UI_TEXT = {
   enterToSend: "Enter to send",
   shiftEnterNewline: "Shift+Enter for new line",
   welcomeMessage: "Welcome to Agent Chat",
-  welcomeDescription: "Use slash commands to route your message to specialized agents, or just type to chat with the default assistant.",
+  welcomeDescription:
+    "Use slash commands to route your message to specialized agents, or just type to chat with the default assistant.",
   noMessages: "Start a conversation by typing a message below.",
 } as const;
 
@@ -59,7 +60,10 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 ];
 
 // Agent display configuration
-export const AGENT_CONFIG: Record<AgentType, { label: string; bgColor: string; textColor: string; icon: string }> = {
+export const AGENT_CONFIG: Record<
+  AgentType,
+  { label: string; bgColor: string; textColor: string; icon: string }
+> = {
   default: {
     label: "Assistant",
     bgColor: "bg-gray-100",
