@@ -143,6 +143,37 @@ from agents.my_agent import MyAgent
 AGENTS["my_agent"] = MyAgent()
 ```
 
+## Docker
+
+### Local Build
+
+```bash
+cd backend
+docker build -t rich-chat-backend .
+docker run -p 7860:7860 rich-chat-backend
+```
+
+### Deploy to Hugging Face Spaces
+
+1. Create a new Space on [Hugging Face](https://huggingface.co/spaces)
+2. Select **Docker** as the SDK
+3. Push the `backend/` folder to the Space repository:
+
+```bash
+cd backend
+git init
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+```
+
+The Space will automatically build and deploy from the Dockerfile.
+
+**Note:** The README.md frontmatter contains the Hugging Face Spaces configuration:
+- `sdk: docker` - Uses Docker SDK
+- `app_port: 7860` - Exposes port 7860
+
 ## Type Checking
 
 ```bash
