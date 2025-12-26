@@ -1,0 +1,20 @@
+{
+  "description": "just a wrapper of frontend/backend customized commands",
+  "scripts": {
+    "dev": "concurrently -k -n nextjs,python -c auto \"npm:dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "cd backend && uv run uvicorn main:app --reload --port 7860",
+    "build:frontend": "npm --prefix run build",
+    "start:frontend": "npm --prefix run start",
+    "lint:frontend": "npm --prefix run lint",
+    "typecheck": "npm run typecheck:frontend && npm run typecheck:backend",
+    "typecheck:frontend": "npm --prefix frontend run typecheck",
+    "typecheck:backend": "cd backend && uv run pyright",
+    "test": "npm --prefix run test",
+    "test:coverage": "npm --prefix run test:coverage",
+    "test:watch": "npm --prefix run test:watch"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
