@@ -48,9 +48,6 @@ dist/
 .venv
 venv/
 
-# uv
-uv.lock
-
 # Chroma database
 chroma_db/
 
