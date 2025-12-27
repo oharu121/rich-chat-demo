@@ -21,15 +21,24 @@ FastAPI backend for the Agent Chat interface with SSE streaming and agent routin
 
 ```
 backend/
-├── main.py              # FastAPI app with SSE endpoints
-├── agents/
-│   ├── base.py          # Abstract BaseAgent class
-│   ├── default_agent.py # General chat agent
-│   ├── code_agent.py    # Code assistance agent
-│   ├── search_agent.py  # Search/lookup agent
-│   └── explain_agent.py # Explanation agent
-└── models/
-    └── schemas.py       # Pydantic models
+├── app/
+│   ├── main.py          # FastAPI app entry point
+│   ├── core/
+│   │   └── registry.py  # Agent registry
+│   ├── routers/
+│   │   ├── chat.py      # SSE streaming chat endpoint
+│   │   ├── health.py    # Health check endpoint
+│   │   └── agents.py    # List agents endpoint
+│   ├── agents/
+│   │   ├── base.py          # Abstract BaseAgent class
+│   │   ├── default_agent.py # General chat agent
+│   │   ├── code_agent.py    # Code assistance agent
+│   │   ├── search_agent.py  # Search/lookup agent
+│   │   └── explain_agent.py # Explanation agent
+│   └── models/
+│       └── schemas.py   # Pydantic models
+├── Dockerfile           # HF Spaces Docker config
+└── pyproject.toml       # Dependencies
 ```
 
 ## API Endpoints
@@ -57,7 +66,7 @@ uv sync
 ### Running
 
 ```bash
-uv run uvicorn main:app --reload --port 7860
+uv run uvicorn app.main:app --reload --port 7860
 ```
 
 The API will be available at http://localhost:7860
@@ -110,9 +119,9 @@ List all available agents.
 
 ## Adding New Agents
 
-1. Create a new file in `agents/` (e.g., `my_agent.py`)
+1. Create a new file in `app/agents/` (e.g., `my_agent.py`)
 2. Extend `BaseAgent` and implement `stream_response()`
-3. Register the agent in `main.py`
+3. Register the agent in `app/core/registry.py`
 
 ```python
 from .base import BaseAgent
@@ -136,11 +145,13 @@ class MyAgent(BaseAgent):
         yield "my agent!"
 ```
 
-Then register in `main.py`:
+Then register in `app/core/registry.py`:
 ```python
-from agents.my_agent import MyAgent
+from app.agents.my_agent import MyAgent
 
-AGENTS["my_agent"] = MyAgent()
+def init_agents() -> None:
+    # ... existing agents ...
+    _AGENTS[AgentType.MY_AGENT] = MyAgent()
 ```
 
 ## Docker

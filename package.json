@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "concurrently -k -n nextjs,python -c auto \"npm:dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "cd backend && uv run uvicorn main:app --reload --port 7860",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 7860",
     "build:frontend": "npm --prefix run build",
     "start:frontend": "npm --prefix run start",
     "lint:frontend": "npm --prefix run lint",
