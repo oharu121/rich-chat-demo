@@ -13,6 +13,7 @@ interface ChatInputProps {
 
 export interface ChatInputRef {
   focus: () => void;
+  selectCommand: (command: SlashCommand) => void;
 }
 
 export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatInput(
@@ -33,9 +34,15 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
     closeMenu,
   } = useSlashCommands();
 
-  // Expose focus method to parent
+  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     focus: () => textareaRef.current?.focus(),
+    selectCommand: (command: SlashCommand) => {
+      setSelectedCommand(command);
+      setInput("");
+      closeMenu();
+      textareaRef.current?.focus();
+    },
   }));
 
   // Auto-focus on mount
