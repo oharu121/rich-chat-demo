@@ -62,36 +62,41 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 // Agent display configuration
 export const AGENT_CONFIG: Record<
   AgentType,
-  { label: string; bgColor: string; textColor: string; icon: string }
+  { label: string; bgColor: string; textColor: string; borderColor: string; icon: string }
 > = {
   default: {
     label: "Assistant",
-    bgColor: "bg-gray-100",
-    textColor: "text-gray-700",
+    bgColor: "bg-gray-200",
+    textColor: "text-gray-600",
+    borderColor: "border-gray-600",
     icon: "chat",
   },
   code: {
     label: "Code",
-    bgColor: "bg-purple-100",
-    textColor: "text-purple-700",
+    bgColor: "bg-purple-200",
+    textColor: "text-purple-600",
+    borderColor: "border-purple-600",
     icon: "code",
   },
   search: {
     label: "Search",
-    bgColor: "bg-blue-100",
-    textColor: "text-blue-700",
+    bgColor: "bg-blue-200",
+    textColor: "text-blue-600",
+    borderColor: "border-blue-600",
     icon: "search",
   },
   explain: {
     label: "Explain",
-    bgColor: "bg-amber-100",
-    textColor: "text-amber-700",
+    bgColor: "bg-amber-200",
+    textColor: "text-amber-600",
+    borderColor: "border-amber-600",
     icon: "book",
   },
   help: {
     label: "Help",
-    bgColor: "bg-green-100",
-    textColor: "text-green-700",
+    bgColor: "bg-green-200",
+    textColor: "text-green-600",
+    borderColor: "border-green-600",
     icon: "help",
   },
 };

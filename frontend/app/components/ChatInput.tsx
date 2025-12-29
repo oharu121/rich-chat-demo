@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, KeyboardEvent, forwardRef, useImperativeHandle } from "react";
-import { UI_TEXT } from "@/lib/constants";
+import { UI_TEXT, AGENT_CONFIG } from "@/lib/constants";
 import { useSlashCommands } from "@/hooks/useSlashCommands";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 import type { AgentType, SlashCommand } from "@/lib/types";
@@ -21,12 +21,12 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
 ) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [selectedCommand, setSelectedCommand] = useState<SlashCommand | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const {
     showMenu,
     selectedIndex,
-    parseInput,
     getFilteredCommands,
     handleInputChange,
     handleKeyDown: handleSlashKeyDown,
@@ -59,12 +59,12 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
   const handleSubmit = () => {
     if (!input.trim() || disabled) return;
 
-    const { message, agent } = parseInput(input);
-    const finalMessage = message || input;
+    const agent = selectedCommand?.agent || "default";
 
-    if (finalMessage.trim()) {
-      onSend(finalMessage.trim(), agent);
+    if (input.trim()) {
+      onSend(input.trim(), agent);
       setInput("");
+      setSelectedCommand(null);
       closeMenu();
       // Reset height
       if (textareaRef.current) {
@@ -74,12 +74,20 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
   };
 
   const handleCommandSelect = (command: SlashCommand) => {
-    setInput(command.command + " ");
+    setSelectedCommand(command);
+    setInput("");
     closeMenu();
     textareaRef.current?.focus();
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Clear selected command on Escape
+    if (e.key === "Escape" && selectedCommand) {
+      e.preventDefault();
+      setSelectedCommand(null);
+      return;
+    }
+
     // First try slash command navigation
     if (handleSlashKeyDown(e, filteredCommands, handleCommandSelect)) {
       return;
@@ -94,13 +102,16 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
 
   const handleChange = (value: string) => {
     setInput(value);
+
+    // If user types "/" while a command is selected, clear it and enter command mode
+    if (value === "/" && selectedCommand) {
+      setSelectedCommand(null);
+    }
+
     handleInputChange(value);
   };
 
   const canSend = input.trim() && !disabled;
-
-  // Parse current input to show active command
-  const { command: activeCommand } = parseInput(input);
 
   return (
     <div className="glass border-t border-white/20 p-4 shadow-lg shadow-gray-200/50">
@@ -115,57 +126,77 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
           />
 
           <div
-            className={`relative flex items-end gap-3 p-2 bg-white rounded-2xl border-2 transition-all duration-200 ${
+            className={`relative flex flex-col bg-white rounded-2xl border-2 transition-all duration-200 ${
               isFocused
                 ? "border-blue-400 shadow-lg shadow-blue-100/50"
                 : "border-gray-200 hover:border-gray-300"
             }`}
           >
-            {/* Active command indicator */}
-            {activeCommand && (
-              <div className="absolute -top-3 left-4 px-2 py-0.5 bg-blue-500 text-white text-xs font-medium rounded-full">
-                {activeCommand.command}
-              </div>
-            )}
+            {/* Command chip row - appears above input */}
+            {selectedCommand && (() => {
+              const config = AGENT_CONFIG[selectedCommand.agent];
+              return (
+                <div className="px-3 pt-2 pb-1">
+                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 border text-xs font-medium rounded-full ${config.bgColor} ${config.textColor} ${config.borderColor}`}>
+                    <span>{selectedCommand.command.slice(1)}</span>
+                    <button
+                      onClick={() => setSelectedCommand(null)}
+                      className="hover:opacity-70 rounded-full p-0.5 transition-opacity"
+                      aria-label="Clear command"
+                    >
+                      <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                        <path d="M9 3L3 9M3 3l6 6" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => handleChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder={UI_TEXT.inputPlaceholder}
-                disabled={disabled}
-                rows={1}
-                className="w-full resize-none bg-transparent px-3 py-2.5 text-base
-                         disabled:text-gray-400
-                         placeholder:text-gray-400"
-                style={{ minHeight: "44px", maxHeight: "150px" }}
-              />
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={!canSend}
-              className={`shrink-0 h-11 w-11 rounded-xl flex items-center justify-center
-                       transition-all duration-200 ${
-                         canSend
-                           ? "bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
-                           : "bg-gray-100 text-gray-400"
-                       }`}
-              aria-label="Send"
-            >
-              <svg
-                className={`w-5 h-5 transition-transform duration-200 ${
-                  canSend ? "translate-x-0.5" : ""
-                }`}
-                fill="currentColor"
-                viewBox="0 0 24 24"
+            {/* Input row */}
+            <div className="flex items-end gap-3 p-2">
+              <div className="flex-1">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder={UI_TEXT.inputPlaceholder}
+                  disabled={disabled}
+                  rows={1}
+                  className="w-full resize-none bg-transparent px-3 py-2.5 text-base
+                           disabled:text-gray-400
+                           placeholder:text-gray-400"
+                  style={{
+                    minHeight: "44px",
+                    maxHeight: "150px",
+                  }}
+                />
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={!canSend}
+                className={`shrink-0 h-11 w-11 rounded-xl flex items-center justify-center
+                         transition-all duration-200 ${
+                           canSend
+                             ? "bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
+                             : "bg-gray-100 text-gray-400"
+                         }`}
+                aria-label="Send"
               >
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
-            </button>
+                <svg
+                  className={`w-5 h-5 transition-transform duration-200 ${
+                    canSend ? "translate-x-0.5" : ""
+                  }`}
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <p className="mt-2.5 text-xs text-gray-400 text-center flex items-center justify-center gap-2">
