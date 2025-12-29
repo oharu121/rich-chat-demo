@@ -6,10 +6,19 @@ import time
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.models import ChatRequest
+from app.models import ChatRequest, AgentType
 from app.core.registry import get_agent
 
 router = APIRouter(prefix="/api", tags=["chat"])
+
+
+# Status messages for display
+STATUS_MESSAGES = {
+    "thinking": "Thinking...",
+    "searching": "Searching the web...",
+    "executing": "Running code...",
+    "reading": "Reading results...",
+}
 
 
 def format_sse(event: str, data: dict) -> str:
@@ -37,10 +46,23 @@ async def stream_chat_response(request: ChatRequest):
     # Convert history to list of dicts
     history = [{"role": m.role.value, "content": m.content} for m in request.history]
 
-    # Stream response tokens
+    # Stream response - handle both tuple format (new) and string format (legacy)
     try:
-        async for token in agent.stream_response(request.message, history):
-            yield format_sse("token", {"token": token})
+        async for item in agent.stream_response(request.message, history):
+            # New format: tuple of (event_type, content)
+            if isinstance(item, tuple) and len(item) == 2:
+                event_type, content = item
+                if event_type == "status":
+                    message = STATUS_MESSAGES.get(content, content)
+                    yield format_sse("status", {"status": content, "message": message})
+                elif event_type == "token":
+                    yield format_sse("token", {"token": content})
+                elif event_type == "error":
+                    yield format_sse("error", {"message": content, "code": "AGENT_ERROR"})
+                    return
+            # Legacy format: plain string token
+            else:
+                yield format_sse("token", {"token": item})
     except Exception as e:
         yield format_sse("error", {"message": str(e), "code": "STREAM_ERROR"})
         return

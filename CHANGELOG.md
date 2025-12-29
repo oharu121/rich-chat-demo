@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-12-29
+
+### Added
+
+- **Gemini Integration**: Default agent now uses Google Gemini API for real AI responses
+- **Google Search Grounding**: Built-in web search capability (enabled by default) for real-time information
+- **Code Execution**: Built-in code execution tool for calculations and runnable code demonstrations
+- **Status Bubbles**: Real-time status indicators showing model activity:
+  - "Thinking..." when processing
+  - "Searching the web..." when using Google Search
+  - "Running code..." when executing code
+- **System Prompt**: Dynamic system prompt with current date and time
+- **Environment Configuration**: New configuration system via `.env` file
+  - `GEMINI_API_KEY` (required)
+  - `GEMINI_MODEL` (default: `gemini-2.0-flash-exp`)
+  - `MAX_HISTORY_MESSAGES` (default: 20)
+
+### Changed
+
+- Default agent now streams real responses from Gemini instead of mock text
+- SSE protocol extended with new `status` event type for tool usage visibility
+- Backend dependencies updated: added `google-genai`, `python-dotenv`
+
+### Technical
+
+- New files: `backend/app/core/config.py`, `backend/app/core/llm.py`, `backend/.env.example`
+- Frontend types extended with `SSEStatusEvent` interface
+- `useChat` hook now exposes `currentStatus` for UI display
+- `MessageBubble` component updated to show status messages during streaming
+- Chat router handles both tuple format (new agents) and string format (legacy agents)
+
 ## [0.2.1] - 2025-12-29
 
 ### Fixed

@@ -5,6 +5,9 @@ Base agent class for all chat agents.
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
+# Response can be either a plain string token or a tuple of (event_type, content)
+StreamItem = str | tuple[str, str]
+
 
 class BaseAgent(ABC):
     """Abstract base class for chat agents."""
@@ -18,7 +21,7 @@ class BaseAgent(ABC):
         self,
         message: str,
         history: list[dict],
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[StreamItem]:
         """
         Generate a streaming response to the user message.
 
@@ -27,6 +30,7 @@ class BaseAgent(ABC):
             history: List of previous messages in the conversation
 
         Yields:
-            Response tokens one at a time
+            Either plain string tokens or tuples of (event_type, content)
+            where event_type is "token", "status", or "error"
         """
         ...

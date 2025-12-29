@@ -56,9 +56,10 @@ function renderContent(content: string): React.ReactNode {
 
 interface MessageBubbleProps {
   message: Message;
+  statusMessage?: string | null;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, statusMessage }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   // Determine avatar state based on message streaming status
@@ -80,7 +81,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               </span>
             </div>
           )}
-          <div className="whitespace-pre-wrap break-words leading-relaxed text-white/95">
+          <div className="whitespace-pre-wrap wrap-break-word leading-relaxed text-white/95">
             {message.content}
           </div>
         </div>
@@ -102,18 +103,27 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           )}
 
           {/* Message content */}
-          <div className="whitespace-pre-wrap break-words leading-relaxed text-gray-700">
+          <div className="whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-700">
             {renderContent(message.content)}
             {message.isStreaming && (
               <span className="inline-block w-0.5 h-5 ml-1 bg-current animate-typing-cursor rounded-full" />
             )}
           </div>
 
-          {/* Loading indicator */}
+          {/* Loading indicator with status */}
           {message.isStreaming && !message.content && (
             <div className="flex items-center gap-3 py-1">
               <LoadingSpinner size="sm" />
-              <span className="text-sm text-gray-500">Generating response...</span>
+              <span className="text-sm text-gray-500">
+                {statusMessage || "Generating response..."}
+              </span>
+            </div>
+          )}
+          {/* Status bubble when streaming with content */}
+          {message.isStreaming && message.content && statusMessage && (
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+              <LoadingSpinner size="sm" />
+              <span className="text-sm text-gray-500">{statusMessage}</span>
             </div>
           )}
         </div>

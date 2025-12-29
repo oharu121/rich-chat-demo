@@ -14,6 +14,7 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentAgent, setCurrentAgent] = useState<AgentType>("default");
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isLoadingRef = useRef(false);
 
@@ -63,7 +64,13 @@ export function useChat() {
 
       for await (const event of streamChat(content, history, agent)) {
         switch (event.type) {
+          case "status":
+            setCurrentStatus(event.data.message);
+            break;
+
           case "token":
+            // Clear status when tokens start flowing
+            setCurrentStatus(null);
             fullContent += event.data.token;
             setMessages((prev) =>
               prev.map((m) =>
@@ -87,6 +94,7 @@ export function useChat() {
             break;
 
           case "done":
+            setCurrentStatus(null);
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMessage.id
@@ -130,6 +138,7 @@ export function useChat() {
       );
     } finally {
       setIsLoading(false);
+      setCurrentStatus(null);
       isLoadingRef.current = false;
       abortControllerRef.current = null;
     }
@@ -150,6 +159,7 @@ export function useChat() {
     isLoading,
     error,
     currentAgent,
+    currentStatus,
     sendMessage,
     clearMessages,
     clearError,

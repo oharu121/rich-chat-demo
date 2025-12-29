@@ -1,35 +1,36 @@
 """
-Default general-purpose chat agent.
+Default general-purpose chat agent with Gemini integration.
 """
 
-import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncIterator
+
+from app.core.llm import get_gemini_client
 
 from .base import BaseAgent
 
 
 class DefaultAgent(BaseAgent):
-    """General-purpose chat agent for everyday conversations."""
+    """General-purpose chat agent with web search and code execution capabilities."""
 
     name = "Default"
-    description = "General chat assistant"
+    description = "General chat assistant with web search and code execution"
     icon = "chat"
 
     async def stream_response(
         self,
         message: str,
         history: list[dict],
-    ) -> AsyncGenerator[str, None]:
-        """Generate a helpful response to the user's message."""
-        # Demo response - in production, this would call an LLM API
-        response = f"I received your message: \"{message}\". "
-        response += "I'm the default assistant, ready to help with general questions. "
-        response += "Try using /code for programming help, /search for lookups, or /explain for detailed explanations."
+    ) -> AsyncIterator[tuple[str, str]]:
+        """
+        Generate a streaming response using Gemini.
 
-        # Simulate streaming by yielding words
-        words = response.split(" ")
-        for i, word in enumerate(words):
-            if i > 0:
-                yield " "
-            yield word
-            await asyncio.sleep(0.03)  # Simulate LLM token generation delay
+        Yields tuples of (event_type, content):
+        - ("status", "thinking") - Model is processing
+        - ("status", "searching") - Model is using web search
+        - ("status", "executing") - Model is executing code
+        - ("token", "text") - Response text token
+        - ("error", "message") - Error occurred
+        """
+        client = get_gemini_client()
+        async for event_type, content in client.stream_response(message, history):
+            yield (event_type, content)

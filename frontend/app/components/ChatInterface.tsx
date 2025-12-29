@@ -14,6 +14,7 @@ export function ChatInterface() {
     isLoading,
     error,
     currentAgent,
+    currentStatus,
     sendMessage,
     clearMessages,
     clearError,
@@ -198,7 +199,10 @@ export function ChatInterface() {
                 className="animate-fade-in-up"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <MessageBubble message={message} />
+                <MessageBubble
+                  message={message}
+                  statusMessage={message.isStreaming ? currentStatus : null}
+                />
               </div>
             ))}
           </div>

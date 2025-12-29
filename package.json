@@ -4,6 +4,7 @@
     "dev": "concurrently -k -n nextjs,python -c auto \"npm:dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 7860",
+    "sync": "cd backend && uv sync --upgrade",
     "build:frontend": "npm --prefix frontend run build",
     "start:frontend": "npm --prefix frontend run start",
     "lint:frontend": "npm --prefix frontend run lint",

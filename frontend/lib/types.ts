@@ -48,7 +48,15 @@ export interface SSEErrorEvent {
   data: { message: string; code: string };
 }
 
-export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent;
+export interface SSEStatusEvent {
+  type: "status";
+  data: {
+    status: "thinking" | "searching" | "executing" | "reading";
+    message: string;
+  };
+}
+
+export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent;
 
 // API response types
 export interface AgentInfo {
