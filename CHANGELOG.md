@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-12-31
+
+### Added
+
+- **Citation Support**: Web search responses now display source links
+  - Sources shown as clickable badges below message content
+  - External link icon for visual clarity
+- **Improved System Prompt**: Enhanced AI response formatting
+  - Markdown formatting for better readability
+  - Appropriate emoji usage for clarity and warmth
+  - Celsius temperature preference
+
+### Changed
+
+- Default Gemini model changed from `gemini-2.0-flash-exp` to `gemini-2.0-flash` (stable)
+
+### Technical
+
+- New `SSESourcesEvent` type for source citation data
+- `Message` interface extended with optional `sources` field
+- `useChat` hook handles new `sources` SSE event
+- `MessageBubble` component renders source links
+- Backend extracts sources from Gemini's `grounding_metadata`
+- Added type guards in chat router for proper type narrowing
+
 ## [0.3.0] - 2025-12-29
 
 ### Added
@@ -19,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **System Prompt**: Dynamic system prompt with current date and time
 - **Environment Configuration**: New configuration system via `.env` file
   - `GEMINI_API_KEY` (required)
-  - `GEMINI_MODEL` (default: `gemini-2.0-flash-exp`)
+  - `GEMINI_MODEL` (default: `gemini-2.0-flash`)
   - `MAX_HISTORY_MESSAGES` (default: 20)
 
 ### Changed

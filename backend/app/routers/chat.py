@@ -1,13 +1,16 @@
 """Chat router with SSE streaming."""
 
 import json
+import logging
 import time
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.models import ChatRequest, AgentType
+from app.models import ChatRequest
 from app.core.registry import get_agent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -29,6 +32,7 @@ def format_sse(event: str, data: dict) -> str:
 async def stream_chat_response(request: ChatRequest):
     """Generate SSE stream for chat response."""
     start_time = time.time()
+    logger.info(f"Chat request: agent={request.agent}, message_length={len(request.message)}")
 
     # Get the appropriate agent
     agent = get_agent(request.agent)
@@ -52,18 +56,21 @@ async def stream_chat_response(request: ChatRequest):
             # New format: tuple of (event_type, content)
             if isinstance(item, tuple) and len(item) == 2:
                 event_type, content = item
-                if event_type == "status":
+                if event_type == "status" and isinstance(content, str):
                     message = STATUS_MESSAGES.get(content, content)
                     yield format_sse("status", {"status": content, "message": message})
-                elif event_type == "token":
+                elif event_type == "token" and isinstance(content, str):
                     yield format_sse("token", {"token": content})
-                elif event_type == "error":
+                elif event_type == "error" and isinstance(content, str):
                     yield format_sse("error", {"message": content, "code": "AGENT_ERROR"})
                     return
+                elif event_type == "sources" and isinstance(content, list):
+                    yield format_sse("sources", {"sources": content})
             # Legacy format: plain string token
             else:
                 yield format_sse("token", {"token": item})
     except Exception as e:
+        logger.error(f"STREAM_ERROR: {type(e).__name__}: {e}", exc_info=True)
         yield format_sse("error", {"message": str(e), "code": "STREAM_ERROR"})
         return
 

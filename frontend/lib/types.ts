@@ -5,6 +5,12 @@
 // Agent types for slash command routing
 export type AgentType = "default" | "code" | "search" | "explain" | "help";
 
+// Source from web search
+export interface Source {
+  title: string;
+  url: string;
+}
+
 // Message structure
 export interface Message {
   id: string;
@@ -13,6 +19,7 @@ export interface Message {
   timestamp: Date;
   isStreaming?: boolean;
   agent?: AgentType;
+  sources?: Source[];
 }
 
 // Slash command definition
@@ -56,7 +63,14 @@ export interface SSEStatusEvent {
   };
 }
 
-export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent;
+export interface SSESourcesEvent {
+  type: "sources";
+  data: {
+    sources: Source[];
+  };
+}
+
+export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent;
 
 // API response types
 export interface AgentInfo {

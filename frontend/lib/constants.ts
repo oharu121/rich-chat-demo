@@ -23,7 +23,7 @@ export const UI_TEXT = {
 
 // API Configuration
 export const API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:7860",
   endpoints: {
     chat: "/api/chat",
     health: "/api/health",

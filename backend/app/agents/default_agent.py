@@ -20,7 +20,7 @@ class DefaultAgent(BaseAgent):
         self,
         message: str,
         history: list[dict],
-    ) -> AsyncIterator[tuple[str, str]]:
+    ) -> AsyncIterator[tuple[str, str | list[dict]]]:
         """
         Generate a streaming response using Gemini.
 
@@ -29,6 +29,7 @@ class DefaultAgent(BaseAgent):
         - ("status", "searching") - Model is using web search
         - ("status", "executing") - Model is executing code
         - ("token", "text") - Response text token
+        - ("sources", [...]) - List of source dicts with title/url from web search
         - ("error", "message") - Error occurred
         """
         client = get_gemini_client()

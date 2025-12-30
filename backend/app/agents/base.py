@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
 # Response can be either a plain string token or a tuple of (event_type, content)
-StreamItem = str | tuple[str, str]
+# Content can be a string or list of dicts (for sources)
+StreamItem = str | tuple[str, str | list[dict]]
 
 
 class BaseAgent(ABC):

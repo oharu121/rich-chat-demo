@@ -1,6 +1,7 @@
 """Gemini LLM client wrapper with streaming and tool support."""
 
 import asyncio
+import logging
 from datetime import datetime
 from typing import AsyncIterator
 
@@ -9,6 +10,8 @@ from google.genai import types
 
 from .config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class GeminiClient:
     """Wrapper for Google Gemini API with streaming support."""
@@ -16,13 +19,19 @@ class GeminiClient:
     def __init__(self, api_key: str, model: str):
         self.client = genai.Client(api_key=api_key)
         self.model = model
+        logger.info(f"GeminiClient initialized with model: {model}")
 
     def get_system_prompt(self) -> str:
         """Generate system prompt with current date and time."""
         now = datetime.now()
         return f"""You are a helpful AI assistant.
 Today is {now.strftime('%A, %B %d, %Y')} at {now.strftime('%I:%M %p')}.
-Be helpful, accurate, and concise."""
+
+Guidelines:
+- Use markdown formatting for better readability (headers, lists, code blocks, bold/italic)
+- Use emojis sparingly where they add clarity or warmth
+- When mentioning temperatures, prefer Celsius over Fahrenheit
+- Be helpful, accurate, and concise."""
 
     def _build_contents(
         self, message: str, history: list[dict], max_history: int
@@ -60,7 +69,7 @@ Be helpful, accurate, and concise."""
         message: str,
         history: list[dict],
         max_history: int | None = None,
-    ) -> AsyncIterator[tuple[str, str]]:
+    ) -> AsyncIterator[tuple[str, str | list[dict]]]:
         """
         Stream response from Gemini with status updates.
 
@@ -69,6 +78,7 @@ Be helpful, accurate, and concise."""
         - ("status", "searching") - Model is using web search
         - ("status", "executing") - Model is executing code
         - ("token", "text") - Response text token
+        - ("sources", [...]) - List of source dicts with title/url from web search
         """
         if max_history is None:
             max_history = settings.MAX_HISTORY_MESSAGES
@@ -88,6 +98,9 @@ Be helpful, accurate, and concise."""
         # Emit initial thinking status
         yield ("status", "thinking")
 
+        logger.info(f"Sending request to Gemini model: {self.model}")
+        logger.debug(f"Contents: {len(contents)} messages, Tools: google_search, code_execution")
+
         try:
             # Run streaming in thread to avoid blocking
             response = await asyncio.to_thread(
@@ -96,10 +109,12 @@ Be helpful, accurate, and concise."""
                 contents=contents,
                 config=gen_config,
             )
+            logger.info("Gemini stream started successfully")
 
             # Track if we've emitted any status for tool use
             emitted_search_status = False
             emitted_code_status = False
+            collected_sources: list[dict] = []
 
             for chunk in response:
                 if not chunk.candidates:
@@ -125,7 +140,7 @@ Be helpful, accurate, and concise."""
                     elif hasattr(part, "text") and part.text:
                         yield ("token", part.text)
 
-                # Check grounding metadata for search usage
+                # Check grounding metadata for search usage and sources
                 if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
                     grounding = candidate.grounding_metadata
                     if hasattr(grounding, "search_entry_point") and grounding.search_entry_point:
@@ -133,7 +148,24 @@ Be helpful, accurate, and concise."""
                             yield ("status", "searching")
                             emitted_search_status = True
 
+                    # Collect sources from grounding chunks
+                    if hasattr(grounding, "grounding_chunks") and grounding.grounding_chunks:
+                        for chunk in grounding.grounding_chunks:
+                            if hasattr(chunk, "web") and chunk.web:
+                                source = {
+                                    "title": chunk.web.title,
+                                    "url": chunk.web.uri,
+                                }
+                                # Avoid duplicates
+                                if source not in collected_sources:
+                                    collected_sources.append(source)
+
+            # Yield collected sources at the end
+            if collected_sources:
+                yield ("sources", collected_sources)
+
         except Exception as e:
+            logger.error(f"Gemini API error: {type(e).__name__}: {e}", exc_info=True)
             yield ("error", str(e))
 
 

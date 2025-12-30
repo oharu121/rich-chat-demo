@@ -104,6 +104,16 @@ export function useChat() {
             );
             break;
 
+          case "sources":
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessage.id
+                  ? { ...m, sources: event.data.sources }
+                  : m
+              )
+            );
+            break;
+
           case "error": {
             const errorCode = event.data.code;
             const errorMessage = errorCode && ERROR_CODE_MESSAGES[errorCode]
