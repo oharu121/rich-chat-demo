@@ -6,7 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 
 # Configure logging
 logging.basicConfig(
@@ -50,6 +50,11 @@ app.include_router(chat_router)
 app.include_router(health_router)
 app.include_router(agents_router)
 
+# ルートエンドポイント
+@app.get("/")
+async def root():
+    """Redirect to API documentation"""
+    return RedirectResponse(url="/docs")
 
 @app.get("/healthz")
 async def healthz():
