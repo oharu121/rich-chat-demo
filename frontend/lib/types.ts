@@ -3,7 +3,7 @@
  */
 
 // Agent types for slash command routing
-export type AgentType = "default" | "code" | "search" | "explain" | "help";
+export type AgentType = "default" | "code" | "search" | "explain" | "help" | "rag";
 
 // Source from web search
 export interface Source {
@@ -58,7 +58,7 @@ export interface SSEErrorEvent {
 export interface SSEStatusEvent {
   type: "status";
   data: {
-    status: "thinking" | "searching" | "executing" | "reading";
+    status: "thinking" | "searching" | "executing" | "reading" | "querying knowledge base";
     message: string;
   };
 }

@@ -12,6 +12,7 @@ class Settings:
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     MAX_HISTORY_MESSAGES: int = int(os.getenv("MAX_HISTORY_MESSAGES", "20"))
+    RAG_API_URL: str = os.getenv("RAG_API_URL", "")
 
     def validate(self) -> None:
         """Validate required settings."""

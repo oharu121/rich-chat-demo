@@ -57,6 +57,12 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Show available commands",
     icon: "help",
   },
+  {
+    command: "/rag",
+    agent: "rag",
+    description: "Query the knowledge base",
+    icon: "database",
+  },
 ];
 
 // Agent display configuration
@@ -98,6 +104,13 @@ export const AGENT_CONFIG: Record<
     textColor: "text-green-600",
     borderColor: "border-green-600",
     icon: "help",
+  },
+  rag: {
+    label: "RAG",
+    bgColor: "bg-teal-200",
+    textColor: "text-teal-600",
+    borderColor: "border-teal-600",
+    icon: "database",
   },
 };
 

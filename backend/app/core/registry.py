@@ -7,6 +7,7 @@ from app.agents import (
     CodeAgent,
     SearchAgent,
     ExplainAgent,
+    RAGAgent,
 )
 
 # Agent registry
@@ -19,6 +20,7 @@ def init_agents() -> None:
     _AGENTS[AgentType.CODE] = CodeAgent()
     _AGENTS[AgentType.SEARCH] = SearchAgent()
     _AGENTS[AgentType.EXPLAIN] = ExplainAgent()
+    _AGENTS[AgentType.RAG] = RAGAgent()
     # Help agent uses default for now
     _AGENTS[AgentType.HELP] = DefaultAgent()
 

@@ -3,6 +3,7 @@ from .default_agent import DefaultAgent
 from .code_agent import CodeAgent
 from .search_agent import SearchAgent
 from .explain_agent import ExplainAgent
+from .rag_agent import RAGAgent
 
 __all__ = [
     "BaseAgent",
@@ -10,4 +11,5 @@ __all__ = [
     "CodeAgent",
     "SearchAgent",
     "ExplainAgent",
+    "RAGAgent",
 ]

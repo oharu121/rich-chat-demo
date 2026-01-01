@@ -17,6 +17,7 @@
     "release": "release-police"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "concurrently": "^9.2.1",
     "release-police": "^1.0.0"
   },

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-01
+
+### Added
+
+- **RAG Slash Command**: New `/rag` command for querying external knowledge bases
+  - Streams responses in real-time from RAG API
+  - Displays source citations (filename:line-range) after answers
+  - Status bubble shows "Querying knowledge base..." during processing
+  - Teal color theme for RAG command chip
+
+### Technical
+
+- New `RAG_API_URL` environment variable for RAG endpoint configuration
+- New files: `backend/app/core/rag.py` (RAG client), `backend/app/agents/rag_agent.py`
+- `AgentType` enum extended with `RAG` value
+- Frontend types and constants updated for `/rag` command
+- Added `aiohttp` dependency for async HTTP requests to RAG API
+
 ## [0.4.0] - 2025-12-31
 
 ### Added

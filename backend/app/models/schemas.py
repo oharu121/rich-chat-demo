@@ -14,6 +14,7 @@ class AgentType(str, Enum):
     SEARCH = "search"
     EXPLAIN = "explain"
     HELP = "help"
+    RAG = "rag"
 
 
 class MessageRole(str, Enum):
