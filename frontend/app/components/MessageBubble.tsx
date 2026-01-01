@@ -6,14 +6,29 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { AgentBadge } from "./AgentBadge";
 
 /**
+ * Check if a bracketed text is a citation
+ * Handles multiple formats:
+ * - Standard: [file.md:10] or [file.md:10-20]
+ * - Japanese: [出典: file, X-Y行目]
+ */
+function isCitation(text: string): boolean {
+  // Standard format: [file.md:10] or [file.md:10-20]
+  if (/^\[[^\]]+:\d+(-\d+)?\]$/.test(text)) return true;
+  // Japanese format with 行目: [出典: file, 121-162行目]
+  if (/^\[出典[：:].+\d+.*行目\]$/.test(text)) return true;
+  return false;
+}
+
+/**
  * Renders message content with simple inline formatting:
+ * - Citations [file:10-20] → blue text
  * - Bold **text** → <strong>
  * - Code `text` → <code>
  * Preserves whitespace and line breaks via CSS whitespace-pre-wrap
  */
 function renderContent(content: string): React.ReactNode {
-  // Combined regex for bold and inline code
-  const regex = /(\*\*[^*]+\*\*)|(`[^`]+`)/g;
+  // Combined regex for citations, bold and inline code
+  const regex = /(\[[^\]]+\])|(\*\*[^*]+\*\*)|(`[^`]+`)/g;
 
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -26,16 +41,28 @@ function renderContent(content: string): React.ReactNode {
     }
 
     if (match[1]) {
+      // Citation match
+      if (isCitation(match[1])) {
+        parts.push(
+          <span key={match.index} className="text-blue-600 font-medium">
+            {match[1]}
+          </span>
+        );
+      } else {
+        // Not a citation, render as plain text
+        parts.push(match[1]);
+      }
+    } else if (match[2]) {
       // Bold match - remove ** markers
-      const boldText = match[1].slice(2, -2);
+      const boldText = match[2].slice(2, -2);
       parts.push(
         <strong key={match.index} className="font-semibold">
           {boldText}
         </strong>
       );
-    } else if (match[2]) {
+    } else if (match[3]) {
       // Code match - remove ` markers
-      const codeText = match[2].slice(1, -1);
+      const codeText = match[3].slice(1, -1);
       parts.push(
         <code key={match.index} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">
           {codeText}
