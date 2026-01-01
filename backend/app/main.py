@@ -6,6 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 
 # Configure logging
 logging.basicConfig(
@@ -48,6 +49,12 @@ app.add_middleware(
 app.include_router(chat_router)
 app.include_router(health_router)
 app.include_router(agents_router)
+
+
+@app.get("/healthz")
+async def healthz():
+    """Lightweight liveness probe for keep-alive pings."""
+    return PlainTextResponse("ok")
 
 
 if __name__ == "__main__":
