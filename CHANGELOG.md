@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-01-02
+
+### Fixed
+
+- **Travel Agent Interactive Questions**: Added clickable question form UI for gathering trip preferences
+  - Duration, budget, and interests selection with pill buttons
+  - Multi-select support for interests
+  - Custom text input option for flexible answers
+
+- **Real-time Status Updates**: Fixed fake status messages
+  - Now shows actual agent progress via CrewAI `task_callback`
+  - Status updates: "Research complete", "Itinerary complete", "Budget complete"
+
+- **Response Streaming**: Fixed truncated responses and long wait times
+  - Each agent's output streams immediately after completion
+  - Added `max_tokens=800` limit per agent for concise responses
+
+- **Circular Import**: Fixed import error in backend core module
+
+- **Dependencies**: Added explicit `urllib3` and `requests` versions for CrewAI compatibility
+
+### Technical
+
+- New `TravelQuestion` and `SSEQuestionsEvent` types in frontend
+- New `TravelQuestionForm.tsx` component for interactive question UI
+- Updated `MessageBubble.tsx` to render question forms
+- Updated `useChat.ts` hook to handle questions SSE event
+- Updated `chat.py` router to forward questions event
+- Updated `StreamItem` type in base.py to support dict payload
+
 ## [0.6.0] - 2026-01-02
 
 ### Added

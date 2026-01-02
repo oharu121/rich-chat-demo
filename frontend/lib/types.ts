@@ -20,6 +20,7 @@ export interface Message {
   isStreaming?: boolean;
   agent?: AgentType;
   sources?: Source[];
+  questions?: TravelQuestion[];
 }
 
 // Slash command definition
@@ -70,7 +71,23 @@ export interface SSESourcesEvent {
   };
 }
 
-export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent;
+// Travel question for interactive intake
+export interface TravelQuestion {
+  id: string;
+  question: string;
+  options: Array<{ label: string; value: string }>;
+  multiSelect: boolean;
+  allowCustom: boolean;
+}
+
+export interface SSEQuestionsEvent {
+  type: "questions";
+  data: {
+    questions: TravelQuestion[];
+  };
+}
+
+export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent | SSEQuestionsEvent;
 
 // API response types
 export interface AgentInfo {

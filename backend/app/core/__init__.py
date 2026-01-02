@@ -1,5 +1,7 @@
-"""Core package."""
+"""Core package.
 
-from .registry import get_agent, get_all_agents, get_agent_count, init_agents, clear_agents
+Note: Registry functions are NOT exported here to avoid circular imports.
+Import directly from app.core.registry instead.
+"""
 
-__all__ = ["get_agent", "get_all_agents", "get_agent_count", "init_agents", "clear_agents"]
+__all__: list[str] = []

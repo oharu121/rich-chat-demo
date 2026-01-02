@@ -114,6 +114,17 @@ export function useChat() {
             );
             break;
 
+          case "questions":
+            setCurrentStatus(null);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessage.id
+                  ? { ...m, questions: event.data.questions, isStreaming: false }
+                  : m
+              )
+            );
+            break;
+
           case "error": {
             const errorCode = event.data.code;
             const errorMessage = errorCode && ERROR_CODE_MESSAGES[errorCode]

@@ -1,9 +1,10 @@
 "use client";
 
-import type { Message } from "@/lib/types";
+import type { Message, AgentType } from "@/lib/types";
 import { MayaAvatar, type AvatarState } from "./MayaAvatar";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AgentBadge } from "./AgentBadge";
+import { TravelQuestionForm } from "./TravelQuestionForm";
 
 /**
  * Check if a bracketed text is a citation
@@ -84,9 +85,10 @@ function renderContent(content: string): React.ReactNode {
 interface MessageBubbleProps {
   message: Message;
   statusMessage?: string | null;
+  onQuestionSubmit?: (answers: Record<string, string | string[]>, agent: AgentType) => void;
 }
 
-export function MessageBubble({ message, statusMessage }: MessageBubbleProps) {
+export function MessageBubble({ message, statusMessage, onQuestionSubmit }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   // Determine avatar state based on message streaming status
@@ -174,6 +176,20 @@ export function MessageBubble({ message, statusMessage }: MessageBubbleProps) {
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Travel questions form */}
+          {message.questions && message.questions.length > 0 && !message.isStreaming && (
+            <div className="mt-3">
+              <TravelQuestionForm
+                questions={message.questions}
+                onSubmit={(answers) => {
+                  if (onQuestionSubmit && message.agent) {
+                    onQuestionSubmit(answers, message.agent);
+                  }
+                }}
+              />
             </div>
           )}
         </div>

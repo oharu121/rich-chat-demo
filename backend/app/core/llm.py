@@ -106,7 +106,7 @@ Guidelines:
             response = await asyncio.to_thread(
                 self.client.models.generate_content_stream,
                 model=self.model,
-                contents=contents,
+                contents=contents,  # type: ignore[arg-type]
                 config=gen_config,
             )
             logger.info("Gemini stream started successfully")

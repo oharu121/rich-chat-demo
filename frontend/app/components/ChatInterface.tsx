@@ -45,6 +45,18 @@ export function ChatInterface() {
     sendMessage(content, agent);
   };
 
+  const handleQuestionSubmit = (answers: Record<string, string | string[]>, agent: AgentType) => {
+    // Format answers as a message to send back to the travel agent
+    const formattedAnswers = Object.entries(answers)
+      .map(([key, value]) => {
+        const valueStr = Array.isArray(value) ? value.join(", ") : value;
+        return `${key}: ${valueStr}`;
+      })
+      .join("\n");
+
+    sendMessage(`Here are my travel preferences:\n${formattedAnswers}`, agent);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-linear-to-br from-slate-50 via-white to-blue-50/30">
       {/* Header */}
@@ -202,6 +214,7 @@ export function ChatInterface() {
                 <MessageBubble
                   message={message}
                   statusMessage={message.isStreaming ? currentStatus : null}
+                  onQuestionSubmit={handleQuestionSubmit}
                 />
               </div>
             ))}
