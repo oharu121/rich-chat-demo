@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-02
+
+### Added
+
+- **Travel Planning Slash Command**: New `/travel` command for AI-powered trip planning
+  - Multi-agent system using CrewAI framework with 4 specialized agents:
+    - Research Agent: Destinations, attractions, weather, local culture
+    - Itinerary Planner: Day-by-day scheduling and activities
+    - Budget Analyst: Cost estimation and money-saving tips
+    - Logistics Coordinator: Transportation and accommodation recommendations
+  - Sequential execution: research → plan → budget → logistics
+  - Real-time status updates showing which agent is working
+  - Rose color theme for travel command chip
+
+### Technical
+
+- Added `crewai>=0.86.0` dependency for multi-agent orchestration
+- New files: `backend/app/agents/travel_agent.py`
+- `AgentType` enum extended with `TRAVEL` value
+- Frontend types updated with new status types for travel planning phases
+- Frontend constants updated for `/travel` command with rose styling
+
 ## [0.5.0] - 2026-01-01
 
 ### Added

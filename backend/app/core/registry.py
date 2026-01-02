@@ -8,6 +8,7 @@ from app.agents import (
     SearchAgent,
     ExplainAgent,
     RAGAgent,
+    TravelAgent,
 )
 
 # Agent registry
@@ -21,6 +22,7 @@ def init_agents() -> None:
     _AGENTS[AgentType.SEARCH] = SearchAgent()
     _AGENTS[AgentType.EXPLAIN] = ExplainAgent()
     _AGENTS[AgentType.RAG] = RAGAgent()
+    _AGENTS[AgentType.TRAVEL] = TravelAgent()
     # Help agent uses default for now
     _AGENTS[AgentType.HELP] = DefaultAgent()
 

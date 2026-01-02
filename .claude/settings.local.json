@@ -5,7 +5,9 @@
       "Bash(cat:*)",
       "Bash(uv run:*)",
       "Bash(npm install:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ]
   }
 }

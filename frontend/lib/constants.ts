@@ -63,6 +63,12 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Query the knowledge base",
     icon: "database",
   },
+  {
+    command: "/travel",
+    agent: "travel",
+    description: "Plan trips with AI travel specialists",
+    icon: "plane",
+  },
 ];
 
 // Agent display configuration
@@ -111,6 +117,13 @@ export const AGENT_CONFIG: Record<
     textColor: "text-teal-600",
     borderColor: "border-teal-600",
     icon: "database",
+  },
+  travel: {
+    label: "Travel",
+    bgColor: "bg-rose-200",
+    textColor: "text-rose-600",
+    borderColor: "border-rose-600",
+    icon: "plane",
   },
 };
 

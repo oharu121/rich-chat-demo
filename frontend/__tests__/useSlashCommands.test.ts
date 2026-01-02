@@ -71,7 +71,7 @@ describe("useSlashCommands", () => {
 
       const commands = result.current.getFilteredCommands("");
 
-      expect(commands.length).toBe(5); // code, search, explain, help, rag
+      expect(commands.length).toBe(6); // code, search, explain, help, rag
     });
 
     it("should filter commands by partial match", () => {
