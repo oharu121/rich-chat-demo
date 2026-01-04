@@ -38,22 +38,14 @@ export function TravelQuestionnaire({ questionnaire, onSubmit }: TravelQuestionn
         setAnswers({ ...answers, [questionId]: [...current, value] });
       }
     } else {
-      // Single select - set answer and auto-advance
+      // Single select - just set answer, require explicit Continue click
       setAnswers({ ...answers, [questionId]: value });
       // Clear custom input when option is selected
       if (customInputs[questionId]) {
         setCustomInputs({ ...customInputs, [questionId]: "" });
       }
-      // Auto-advance to next step or submit on last step
-      setTimeout(() => {
-        if (isLastStep) {
-          handleSubmit({ ...answers, [questionId]: value });
-        } else {
-          setCurrentStep((prev) => prev + 1);
-        }
-      }, 150);
     }
-  }, [answers, customInputs, isLastStep]);
+  }, [answers, customInputs]);
 
   const handleCustomInput = useCallback((questionId: string, value: string) => {
     setCustomInputs({ ...customInputs, [questionId]: value });
@@ -188,21 +180,19 @@ export function TravelQuestionnaire({ questionnaire, onSubmit }: TravelQuestionn
           Back
         </button>
 
-        {/* Continue/Submit button (only for multi-select or custom input) */}
-        {(currentQuestion.multiSelect || currentQuestion.allowCustom) && (
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!hasCurrentAnswer}
-            className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-all duration-150
-              ${hasCurrentAnswer
-                ? "bg-rose-500 text-white hover:bg-rose-600 shadow-sm"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-          >
-            {isLastStep ? "Plan My Trip" : "Continue"}
-          </button>
-        )}
+        {/* Continue/Submit button - always visible for consistent UX */}
+        <button
+          type="button"
+          onClick={handleContinue}
+          disabled={!hasCurrentAnswer}
+          className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-all duration-150
+            ${hasCurrentAnswer
+              ? "bg-rose-500 text-white hover:bg-rose-600 shadow-sm"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+        >
+          {isLastStep ? "Plan My Trip" : "Continue"}
+        </button>
       </div>
     </div>
   );

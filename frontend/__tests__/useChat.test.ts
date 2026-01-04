@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useChat } from "@/hooks/useChat";
+import { useChatStore } from "@/stores/chatStore";
 import * as api from "@/lib/api";
 
 // Mock the api module
@@ -11,6 +12,8 @@ vi.mock("@/lib/api", () => ({
 describe("useChat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset Zustand store state before each test
+    useChatStore.getState().clearChat();
   });
 
   afterEach(() => {

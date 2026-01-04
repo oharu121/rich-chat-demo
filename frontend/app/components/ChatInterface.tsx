@@ -17,6 +17,8 @@ export function ChatInterface() {
     currentAgent,
     currentStatus,
     sendMessage,
+    sendAssistantRequest,
+    updateMessage,
     clearMessages,
     clearError,
   } = useChat();
@@ -53,7 +55,8 @@ export function ChatInterface() {
   const handleQuestionSubmit = (
     answers: Record<string, string | string[]>,
     existingContext: Record<string, unknown>,
-    agent: AgentType
+    agent: AgentType,
+    messageId: string
   ) => {
     // Merge existing context with new answers
     const mergedContext = { ...existingContext, ...answers };
@@ -62,16 +65,14 @@ export function ChatInterface() {
     // Cast is safe because answers contains string | string[] and existingContext comes from backend TravelContext
     updateContext(agent, mergedContext as Record<string, string | string[] | null>);
 
-    // Format answers as a human-readable message
-    const formattedAnswers = Object.entries(answers)
-      .map(([key, value]) => {
-        const valueStr = Array.isArray(value) ? value.join(", ") : value;
-        return `${key}: ${valueStr}`;
-      })
-      .join("\n");
+    // Mark questionnaire as submitted (shows confirmation UI instead of form)
+    updateMessage(messageId, {
+      questionnaireSubmitted: true,
+      questionnaireAnswers: answers,
+    });
 
-    // Send with full context - backend will use context, not re-extract
-    sendMessage(`Here are my travel preferences:\n${formattedAnswers}`, agent, mergedContext);
+    // Trigger assistant response without creating fake user message
+    sendAssistantRequest(agent, mergedContext);
   };
 
   const handleClearMessages = () => {

@@ -22,6 +22,8 @@ export interface Message {
   sources?: Source[];
   questions?: TravelQuestion[];  // Legacy single-form questions
   questionnaire?: Questionnaire;  // Multi-step wizard questionnaire
+  questionnaireSubmitted?: boolean;  // Track if questionnaire was submitted
+  questionnaireAnswers?: Record<string, string | string[]>;  // Store submitted answers
 }
 
 // Slash command definition

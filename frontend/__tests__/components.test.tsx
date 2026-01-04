@@ -259,7 +259,8 @@ describe("MessageBubble", () => {
     it("shows agent tag for non-default agent", () => {
       const message = createMessage({ role: "user", content: "Help", agent: "code" });
       render(<MessageBubble message={message} />);
-      expect(screen.getByText("/code")).toBeInTheDocument();
+      // Uses AgentBadge component now which shows "Code" not "/code"
+      expect(screen.getByText("Code")).toBeInTheDocument();
     });
 
     it("does not show agent tag for default agent", () => {

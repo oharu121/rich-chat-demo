@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-01-05
+
+### Fixed
+
+- **Agent Badge Persistence in Chat Input**: Slash command badge (e.g., "Travel") now persists after sending messages
+  - Previously: Badge disappeared after each message, forcing users to re-type `/travel` for every message
+  - Now: Badge persists until user explicitly dismisses via X button or Escape key
+  - Enables smooth multi-turn conversations with specialized agents
+
+- **Markdown Headers Rendering**: Headers (`##`, `###`) now render as styled text in chat bubbles
+  - Previously: Raw `## Destination Highlights` appeared as plain text
+  - Now: Headers render with proper font sizes and weights (xl/lg/base)
+  - Bullet points (`-`, `*`) also render with styled bullets
+
+- **Questionnaire UX Improvements**: Three fixes to the travel questionnaire form
+  - Auto-advance removed: Single-select options no longer auto-advance; user must click Continue
+  - Form hidden after submission: Questionnaire transforms into confirmation summary
+  - No fake user message: Removed "Here are my travel preferences:..." user bubble that user never typed
+
+- **User Message Agent Badge Styling**: Unified badge styling between user and assistant messages
+  - Previously: User messages showed `/travel` with white transparent style, right-aligned
+  - Now: Uses same `AgentBadge` component with colored icon, left-aligned
+
+### Technical
+
+- `ChatInput.tsx`: Removed `setSelectedCommand(null)` from `handleSubmit()` for badge persistence
+- `MessageBubble.tsx`:
+  - Refactored `renderContent()` to process lines for headers and bullets
+  - Added `renderInlineFormatting()` for citations, bold, and code
+  - Added confirmation UI when `questionnaireSubmitted` is true
+  - Replaced custom user badge with shared `AgentBadge` component
+- `TravelQuestionnaire.tsx`: Removed auto-advance logic, always show Continue button
+- `ChatInterface.tsx`: Updated `handleQuestionSubmit` to use `updateMessage` and `sendAssistantRequest`
+- `useChat.ts`: Added `sendAssistantRequest()` for triggering assistant response without user message
+- `chatStore.ts`: Added `updateMessage(id, updates)` for updating specific messages
+- `types.ts`: Added `questionnaireSubmitted` and `questionnaireAnswers` fields to Message
+
 ## [0.8.0] - 2026-01-04
 
 ### Added

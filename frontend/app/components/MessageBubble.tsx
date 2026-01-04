@@ -22,13 +22,12 @@ function isCitation(text: string): boolean {
 }
 
 /**
- * Renders message content with simple inline formatting:
+ * Renders inline formatting within a line:
  * - Citations [file:10-20] → blue text
  * - Bold **text** → <strong>
  * - Code `text` → <code>
- * Preserves whitespace and line breaks via CSS whitespace-pre-wrap
  */
-function renderContent(content: string): React.ReactNode {
+function renderInlineFormatting(text: string, keyPrefix: string): React.ReactNode {
   // Combined regex for citations, bold and inline code
   const regex = /(\[[^\]]+\])|(\*\*[^*]+\*\*)|(`[^`]+`)/g;
 
@@ -36,17 +35,17 @@ function renderContent(content: string): React.ReactNode {
   let lastIndex = 0;
   let match;
 
-  while ((match = regex.exec(content)) !== null) {
+  while ((match = regex.exec(text)) !== null) {
     // Add text before match
     if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
+      parts.push(text.slice(lastIndex, match.index));
     }
 
     if (match[1]) {
       // Citation match
       if (isCitation(match[1])) {
         parts.push(
-          <span key={match.index} className="text-blue-600 font-medium">
+          <span key={`${keyPrefix}-${match.index}`} className="text-blue-600 font-medium">
             {match[1]}
           </span>
         );
@@ -58,7 +57,7 @@ function renderContent(content: string): React.ReactNode {
       // Bold match - remove ** markers
       const boldText = match[2].slice(2, -2);
       parts.push(
-        <strong key={match.index} className="font-semibold">
+        <strong key={`${keyPrefix}-${match.index}`} className="font-semibold">
           {boldText}
         </strong>
       );
@@ -66,7 +65,7 @@ function renderContent(content: string): React.ReactNode {
       // Code match - remove ` markers
       const codeText = match[3].slice(1, -1);
       parts.push(
-        <code key={match.index} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">
+        <code key={`${keyPrefix}-${match.index}`} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">
           {codeText}
         </code>
       );
@@ -76,17 +75,84 @@ function renderContent(content: string): React.ReactNode {
   }
 
   // Add remaining text
-  if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
   }
 
-  return parts.length > 0 ? parts : content;
+  return parts.length > 0 ? parts : text;
+}
+
+/**
+ * Renders message content with formatting:
+ * - Headers ## text → styled headers
+ * - Citations [file:10-20] → blue text
+ * - Bold **text** → <strong>
+ * - Code `text` → <code>
+ * - Bullet points * item → styled lists
+ */
+function renderContent(content: string): React.ReactNode {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check for headers (## or ###)
+    const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
+    if (headerMatch) {
+      const level = headerMatch[1].length;
+      const headerText = headerMatch[2];
+
+      const headerClasses = {
+        1: "text-xl font-bold text-gray-900 mt-4 mb-2",
+        2: "text-lg font-semibold text-gray-800 mt-3 mb-2",
+        3: "text-base font-semibold text-gray-700 mt-2 mb-1",
+      }[level] || "text-base font-semibold text-gray-700 mt-2 mb-1";
+
+      elements.push(
+        <div key={`h-${i}`} className={headerClasses}>
+          {renderInlineFormatting(headerText, `h-${i}`)}
+        </div>
+      );
+      continue;
+    }
+
+    // Check for bullet points (- or *)
+    const bulletMatch = line.match(/^(\s*)[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      const indent = bulletMatch[1].length;
+      const bulletText = bulletMatch[2];
+      const marginLeft = indent > 0 ? `ml-${Math.min(indent, 8)}` : "";
+
+      elements.push(
+        <div key={`li-${i}`} className={`flex items-start gap-2 ${marginLeft}`}>
+          <span className="text-gray-400 mt-1">•</span>
+          <span>{renderInlineFormatting(bulletText, `li-${i}`)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Regular line - render with inline formatting
+    if (line.trim() === "") {
+      // Empty line - add spacing
+      elements.push(<div key={`br-${i}`} className="h-2" />);
+    } else {
+      elements.push(
+        <div key={`p-${i}`}>
+          {renderInlineFormatting(line, `p-${i}`)}
+        </div>
+      );
+    }
+  }
+
+  return elements;
 }
 
 interface MessageBubbleProps {
   message: Message;
   statusMessage?: string | null;
-  onQuestionSubmit?: (answers: Record<string, string | string[]>, context: Record<string, unknown>, agent: AgentType) => void;
+  onQuestionSubmit?: (answers: Record<string, string | string[]>, context: Record<string, unknown>, agent: AgentType, messageId: string) => void;
 }
 
 export function MessageBubble({ message, statusMessage, onQuestionSubmit }: MessageBubbleProps) {
@@ -105,10 +171,8 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
         <div className="max-w-[85%] bg-linear-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md shadow-blue-500/20 px-5 py-3.5 transition-all duration-200 hover:shadow-lg">
           {/* Agent badge for user message if using a specific agent */}
           {message.agent && message.agent !== "default" && (
-            <div className="mb-2 flex justify-end">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-white/20 text-white/90">
-                /{message.agent}
-              </span>
+            <div className="mb-2">
+              <AgentBadge agent={message.agent} />
             </div>
           )}
           <div className="whitespace-pre-wrap wrap-break-word leading-relaxed text-white/95">
@@ -133,7 +197,7 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
           )}
 
           {/* Message content */}
-          <div className="whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-700">
+          <div className="wrap-break-word leading-relaxed text-gray-700">
             {renderContent(message.content)}
             {message.isStreaming && (
               <span className="inline-block w-0.5 h-5 ml-1 bg-current animate-typing-cursor rounded-full" />
@@ -183,14 +247,31 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
           {/* Multi-step questionnaire (new Claude Code style) */}
           {message.questionnaire && message.questionnaire.steps.length > 0 && !message.isStreaming && (
             <div className="mt-3">
-              <TravelQuestionnaire
-                questionnaire={message.questionnaire}
-                onSubmit={(answers, context) => {
-                  if (onQuestionSubmit && message.agent) {
-                    onQuestionSubmit(answers, context, message.agent);
-                  }
-                }}
-              />
+              {message.questionnaireSubmitted ? (
+                /* Confirmation summary after submission */
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-green-700 font-medium mb-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Trip preferences saved
+                  </div>
+                  <ul className="text-sm text-green-600 space-y-1">
+                    {Object.entries(message.questionnaireAnswers || {}).map(([key, value]) => (
+                      <li key={key}>• {key}: {Array.isArray(value) ? value.join(", ") : value}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <TravelQuestionnaire
+                  questionnaire={message.questionnaire}
+                  onSubmit={(answers, context) => {
+                    if (onQuestionSubmit && message.agent) {
+                      onQuestionSubmit(answers, context, message.agent, message.id);
+                    }
+                  }}
+                />
+              )}
             </div>
           )}
 
@@ -201,7 +282,7 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
                 questions={message.questions}
                 onSubmit={(answers) => {
                   if (onQuestionSubmit && message.agent) {
-                    onQuestionSubmit(answers, {}, message.agent);
+                    onQuestionSubmit(answers, {}, message.agent, message.id);
                   }
                 }}
               />

@@ -7,7 +7,8 @@
       "Bash(npm install:*)",
       "Bash(mkdir:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run typecheck:*)"
     ]
   }
 }

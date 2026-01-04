@@ -71,7 +71,8 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
     if (input.trim()) {
       onSend(input.trim(), agent);
       setInput("");
-      setSelectedCommand(null);
+      // Keep selectedCommand so badge persists for multi-turn conversations
+      // User can dismiss via X button or Escape key
       closeMenu();
       // Reset height
       if (textareaRef.current) {
