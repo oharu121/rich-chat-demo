@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-01-03
+
+### Fixed
+
+- **Destination Context Preserved**: Travel agent now remembers destination after question form submission
+  - Previously, submitting preferences via the form would cause agent to ask "where would you like to go?" again
+  - New `_find_destination_in_history()` method searches conversation history for the destination
+  - Checks both user messages and assistant responses for destination patterns
+
+### Technical
+
+- Added `_find_destination_in_history()` method to `travel_agent.py`
+- Updated `stream_response()` to search history when current message lacks destination but has preferences
+- Comprehensive documentation added to `.dev-notes/2026-01-03.md`:
+  - Travel agent flow diagram showing where CrewAI is/isn't involved
+  - Analysis of why CrewAI memory is not needed for this use case
+  - Guide on when to use CrewAI memory (short-term, long-term, entity)
+  - Vector database comparison (Pinecone, Qdrant, Weaviate, Chroma, pgvector, Supabase)
+
 ## [0.6.1] - 2026-01-02
 
 ### Fixed

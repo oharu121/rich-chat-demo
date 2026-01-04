@@ -121,6 +121,32 @@ class TravelAgent(BaseAgent):
 
         return (has_duration and has_budget) or has_preferences or (has_duration and has_interests)
 
+    def _find_destination_in_history(self, history: list[dict]) -> str | None:
+        """
+        Search conversation history for a destination.
+
+        This is needed when user submits preferences via the question form,
+        as the destination was mentioned in an earlier message.
+        """
+        # Look through recent history for a destination
+        for msg in reversed(history[-6:]):
+            if msg.get("role") == "user":
+                destination = self._extract_destination(msg.get("content", ""))
+                if destination:
+                    return destination
+            # Also check assistant messages for "destination is X" patterns
+            elif msg.get("role") == "assistant":
+                content = msg.get("content", "")
+                # Look for patterns like "**Brazil** is an amazing destination"
+                match = re.search(
+                    r"\*\*([A-Za-z\s]+)\*\*\s+is\s+(?:an?\s+)?(?:amazing|great|wonderful|fantastic)",
+                    content,
+                    re.IGNORECASE,
+                )
+                if match:
+                    return match.group(1).strip()
+        return None
+
     def _create_crew(self, query: str, context: str, output_queue: Queue) -> Crew:
         """Create the travel planning crew with specialized agents."""
         llm = self._create_llm()
@@ -220,6 +246,10 @@ Provide:
         2. If has details → run crew and stream each agent's output
         """
         destination = self._extract_destination(message)
+
+        # If no destination in current message, check history (for follow-up with preferences)
+        if not destination and self._has_travel_details(message, history):
+            destination = self._find_destination_in_history(history)
 
         if not destination:
             yield ("token", "I'd be happy to help plan your trip! Could you tell me where you'd like to go?")
