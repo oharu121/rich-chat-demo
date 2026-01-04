@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-04
+
+### Fixed
+
+- **Questionnaire Option Cards UI**: Changed from pill buttons with hover tooltips to full-width card-style options
+  - Descriptions now always visible below the label (not hidden in tooltips)
+  - Larger touch targets for better mobile UX
+  - Matches Claude Code's AskUserQuestion design pattern
+  - Vertical stack layout instead of horizontal flex wrap
+
+### Technical
+
+- Updated `TravelQuestionnaire.tsx` option rendering:
+  - Layout: `flex flex-wrap` → `space-y-2` (vertical stack)
+  - Width: Auto → Full width (`w-full`)
+  - Shape: `rounded-full` (pill) → `rounded-lg` (card)
+  - Description: Tooltip on hover → Always visible `text-xs` below label
+
 ## [0.7.0] - 2026-01-04
 
 ### Added

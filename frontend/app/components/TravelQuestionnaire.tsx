@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Questionnaire, QuestionStep } from "@/lib/types";
+import type { Questionnaire } from "@/lib/types";
 
 interface TravelQuestionnaireProps {
   questionnaire: Questionnaire;
@@ -137,25 +137,24 @@ export function TravelQuestionnaire({ questionnaire, onSubmit }: TravelQuestionn
           )}
         </p>
 
-        {/* Options */}
-        <div className="flex flex-wrap gap-2 mb-3">
+        {/* Options - Claude Code style cards with visible descriptions */}
+        <div className="space-y-2 mb-3">
           {currentQuestion.options.map((opt) => (
             <button
               key={opt.value}
               type="button"
               onClick={() => handleOptionClick(currentQuestion.id, opt.value, currentQuestion.multiSelect)}
-              className={`group relative px-3 py-1.5 rounded-full text-sm border transition-all duration-150
+              className={`w-full text-left px-4 py-3 rounded-lg border transition-all duration-150
                 ${isSelected(currentQuestion.id, opt.value)
                   ? "bg-rose-500 text-white border-rose-500 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-rose-300 hover:bg-rose-50"
+                  : "bg-white text-gray-700 border-gray-200 hover:border-rose-300 hover:bg-rose-50"
                 }`}
             >
-              <span>{opt.label}</span>
-              {/* Description tooltip on hover */}
+              <div className="font-medium text-sm">{opt.label}</div>
               {opt.description && (
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                <div className={`text-xs mt-0.5 ${isSelected(currentQuestion.id, opt.value) ? "text-rose-100" : "text-gray-500"}`}>
                   {opt.description}
-                </span>
+                </div>
               )}
             </button>
           ))}
