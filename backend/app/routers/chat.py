@@ -32,7 +32,7 @@ def format_sse(event: str, data: dict) -> str:
 async def stream_chat_response(request: ChatRequest):
     """Generate SSE stream for chat response."""
     start_time = time.time()
-    logger.info(f"Chat request: agent={request.agent}, message_length={len(request.message)}")
+    logger.info(f"Chat request: agent={request.agent}, message_length={len(request.message)}, has_context={request.context is not None}")
 
     # Get the appropriate agent
     agent = get_agent(request.agent)
@@ -52,7 +52,7 @@ async def stream_chat_response(request: ChatRequest):
 
     # Stream response - handle both tuple format (new) and string format (legacy)
     try:
-        async for item in agent.stream_response(request.message, history):
+        async for item in agent.stream_response(request.message, history, request.context):
             # New format: tuple of (event_type, content)
             if isinstance(item, tuple) and len(item) == 2:
                 event_type, content = item

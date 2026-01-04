@@ -19,6 +19,7 @@ class ExplainAgent(BaseAgent):
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         """Generate detailed explanatory responses."""
         # Demo response - in production, this would call an LLM API

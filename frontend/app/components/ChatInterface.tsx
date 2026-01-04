@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import type { ChatInputRef } from "./ChatInput";
 import type { AgentType } from "@/lib/types";
+import { useAgentContextStore } from "@/stores/agentContext";
 
 export function ChatInterface() {
   const {
@@ -19,6 +20,8 @@ export function ChatInterface() {
     clearMessages,
     clearError,
   } = useChat();
+
+  const { updateContext, clearAllContexts, getContext } = useAgentContextStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputRef>(null);
@@ -42,11 +45,24 @@ export function ChatInterface() {
   }, []);
 
   const handleSendMessage = (content: string, agent: AgentType) => {
-    sendMessage(content, agent);
+    // Get current context for the agent and send it with the message
+    const context = getContext(agent);
+    sendMessage(content, agent, context);
   };
 
-  const handleQuestionSubmit = (answers: Record<string, string | string[]>, agent: AgentType) => {
-    // Format answers as a message to send back to the travel agent
+  const handleQuestionSubmit = (
+    answers: Record<string, string | string[]>,
+    existingContext: Record<string, unknown>,
+    agent: AgentType
+  ) => {
+    // Merge existing context with new answers
+    const mergedContext = { ...existingContext, ...answers };
+
+    // Update the Zustand store with the merged context
+    // Cast is safe because answers contains string | string[] and existingContext comes from backend TravelContext
+    updateContext(agent, mergedContext as Record<string, string | string[] | null>);
+
+    // Format answers as a human-readable message
     const formattedAnswers = Object.entries(answers)
       .map(([key, value]) => {
         const valueStr = Array.isArray(value) ? value.join(", ") : value;
@@ -54,7 +70,13 @@ export function ChatInterface() {
       })
       .join("\n");
 
-    sendMessage(`Here are my travel preferences:\n${formattedAnswers}`, agent);
+    // Send with full context - backend will use context, not re-extract
+    sendMessage(`Here are my travel preferences:\n${formattedAnswers}`, agent, mergedContext);
+  };
+
+  const handleClearMessages = () => {
+    clearMessages();
+    clearAllContexts(); // Also clear agent contexts when clearing chat
   };
 
   return (
@@ -73,7 +95,7 @@ export function ChatInterface() {
           <div className="flex items-center gap-3">
             {messages.length > 0 && (
               <button
-                onClick={clearMessages}
+                onClick={handleClearMessages}
                 className="group flex items-center gap-2 px-4 py-2 text-sm font-medium
                          text-gray-600 bg-white/80 rounded-xl border border-gray-200/60
                          hover:bg-white hover:border-gray-300 hover:text-gray-900

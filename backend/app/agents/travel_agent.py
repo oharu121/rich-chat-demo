@@ -370,42 +370,54 @@ Provide:
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncIterator[tuple[str, str | dict | list[dict]]]:
         """
         Execute travel planning with LLM-powered intake.
 
         Flow:
-        1. Extract context using LLM (semantic understanding)
-        2. If missing required fields → generate dynamic questions
-        3. If complete → run CrewAI planning agents
+        1. If context provided, use it directly (structured memory from frontend)
+        2. Otherwise, extract context using LLM (semantic understanding)
+        3. If missing required fields → generate dynamic questions
+        4. If complete → run CrewAI planning agents
         """
         # Step 1: Show analyzing status
         yield ("status", "Analyzing your request...")
 
-        # Step 2: Extract context with LLM
-        context = await self._extract_context(message, history)
-        logger.info(f"Extracted context: {context.model_dump()}")
+        # Step 2: Use frontend context if provided, otherwise extract with LLM
+        if context:
+            # Frontend sent structured context - use it directly
+            try:
+                travel_context = TravelContext.model_validate(context)
+                logger.info(f"Using frontend context: {travel_context.model_dump()}")
+            except Exception as e:
+                logger.warning(f"Failed to parse frontend context: {e}, falling back to LLM extraction")
+                travel_context = await self._extract_context(message, history)
+        else:
+            # No context from frontend - extract with LLM
+            travel_context = await self._extract_context(message, history)
+            logger.info(f"Extracted context via LLM: {travel_context.model_dump()}")
 
         # Step 3: Check if we have a destination
-        if not context.destination:
+        if not travel_context.destination:
             yield ("token", "I'd love to help plan your trip! Where would you like to go?")
             return
 
         # Step 4: Check what's missing
-        missing = context.get_missing_required()
+        missing = travel_context.get_missing_required()
 
         if missing:
             # Step 5: Generate dynamic questions for missing fields
             yield ("status", "Preparing questions...")
 
-            questions = await self._generate_questions(context, missing)
+            questions = await self._generate_questions(travel_context, missing)
             logger.info(f"Generated {len(questions)} questions for missing fields: {missing}")
 
             # Step 6: Emit questionnaire
             yield ("questionnaire", {
-                "title": f"Planning trip to {context.destination}",
+                "title": f"Planning trip to {travel_context.destination}",
                 "steps": questions,
-                "context": context.model_dump(exclude_none=True),
+                "context": travel_context.model_dump(exclude_none=True),
             })
             return
 
@@ -423,7 +435,7 @@ Provide:
 
         def run_crew():
             try:
-                crew = self._create_crew(context, output_queue)
+                crew = self._create_crew(travel_context, output_queue)
                 crew.kickoff()
             except Exception as e:
                 logger.error(f"Crew execution failed: {e}")

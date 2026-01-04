@@ -246,6 +246,7 @@ describe("api", () => {
               { role: "assistant", content: "Previous response" },
             ],
             agent: "code",
+            context: null,
           }),
         })
       );

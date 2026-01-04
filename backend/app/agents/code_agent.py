@@ -19,6 +19,7 @@ class CodeAgent(BaseAgent):
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         """Generate code-focused responses."""
         # Demo response - in production, this would call an LLM API

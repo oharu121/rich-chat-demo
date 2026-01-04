@@ -22,6 +22,7 @@ class BaseAgent(ABC):
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncIterator[StreamItem]:
         """
         Generate a streaming response to the user message.
@@ -29,6 +30,7 @@ class BaseAgent(ABC):
         Args:
             message: The user's message
             history: List of previous messages in the conversation
+            context: Optional agent-specific context from frontend store
 
         Yields:
             Either plain string tokens or tuples of (event_type, content)

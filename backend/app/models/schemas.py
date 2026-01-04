@@ -35,6 +35,7 @@ class ChatRequest(BaseModel):
     message: str
     history: list[Message] = []
     agent: AgentType = AgentType.DEFAULT
+    context: Optional[dict] = None  # Agent-specific context from frontend store
 
 
 class AgentInfo(BaseModel):

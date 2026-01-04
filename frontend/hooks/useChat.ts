@@ -18,7 +18,11 @@ export function useChat() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isLoadingRef = useRef(false);
 
-  const sendMessage = useCallback(async (content: string, agent: AgentType = "default") => {
+  const sendMessage = useCallback(async (
+    content: string,
+    agent: AgentType = "default",
+    context?: Record<string, unknown>
+  ) => {
     if (!content.trim() || isLoadingRef.current) return;
 
     setError(null);
@@ -62,7 +66,7 @@ export function useChat() {
       let fullContent = "";
       let responseAgent: AgentType = agent;
 
-      for await (const event of streamChat(content, history, agent)) {
+      for await (const event of streamChat(content, history, agent, context)) {
         switch (event.type) {
           case "status":
             setCurrentStatus(event.data.message);

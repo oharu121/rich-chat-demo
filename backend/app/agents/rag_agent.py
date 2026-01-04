@@ -33,6 +33,7 @@ class RAGAgent(BaseAgent):
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncIterator[tuple[str, str | list[dict]]]:
         """
         Generate a streaming response by querying the RAG API.

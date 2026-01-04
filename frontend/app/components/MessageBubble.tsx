@@ -86,7 +86,7 @@ function renderContent(content: string): React.ReactNode {
 interface MessageBubbleProps {
   message: Message;
   statusMessage?: string | null;
-  onQuestionSubmit?: (answers: Record<string, string | string[]>, agent: AgentType) => void;
+  onQuestionSubmit?: (answers: Record<string, string | string[]>, context: Record<string, unknown>, agent: AgentType) => void;
 }
 
 export function MessageBubble({ message, statusMessage, onQuestionSubmit }: MessageBubbleProps) {
@@ -185,9 +185,9 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
             <div className="mt-3">
               <TravelQuestionnaire
                 questionnaire={message.questionnaire}
-                onSubmit={(answers) => {
+                onSubmit={(answers, context) => {
                   if (onQuestionSubmit && message.agent) {
-                    onQuestionSubmit(answers, message.agent);
+                    onQuestionSubmit(answers, context, message.agent);
                   }
                 }}
               />
@@ -201,7 +201,7 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
                 questions={message.questions}
                 onSubmit={(answers) => {
                   if (onQuestionSubmit && message.agent) {
-                    onQuestionSubmit(answers, message.agent);
+                    onQuestionSubmit(answers, {}, message.agent);
                   }
                 }}
               />

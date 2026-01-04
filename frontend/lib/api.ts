@@ -35,7 +35,8 @@ export async function fetchAgents(): Promise<AgentsResponse> {
 export async function* streamChat(
   message: string,
   history: Pick<Message, "role" | "content">[],
-  agent: AgentType = "default"
+  agent: AgentType = "default",
+  context?: Record<string, unknown>
 ): AsyncGenerator<SSEEvent, void, unknown> {
   const response = await fetch(`${baseUrl}${endpoints.chat}`, {
     method: "POST",
@@ -46,6 +47,7 @@ export async function* streamChat(
       message,
       history: history.map((m) => ({ role: m.role, content: m.content })),
       agent,
+      context: context || null,
     }),
   });
 

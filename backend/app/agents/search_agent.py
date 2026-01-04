@@ -19,6 +19,7 @@ class SearchAgent(BaseAgent):
         self,
         message: str,
         history: list[dict],
+        context: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         """Generate search-focused responses."""
         # Demo response - in production, this would integrate with search APIs

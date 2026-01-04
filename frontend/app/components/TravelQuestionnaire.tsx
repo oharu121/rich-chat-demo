@@ -5,7 +5,7 @@ import type { Questionnaire } from "@/lib/types";
 
 interface TravelQuestionnaireProps {
   questionnaire: Questionnaire;
-  onSubmit: (answers: Record<string, string | string[]>) => void;
+  onSubmit: (answers: Record<string, string | string[]>, context: Record<string, unknown>) => void;
 }
 
 /**
@@ -93,8 +93,9 @@ export function TravelQuestionnaire({ questionnaire, onSubmit }: TravelQuestionn
         merged[key] = value.trim();
       }
     }
-    onSubmit(merged);
-  }, [customInputs, onSubmit]);
+    // Pass both answers and existing context from questionnaire
+    onSubmit(merged, questionnaire.context);
+  }, [customInputs, onSubmit, questionnaire.context]);
 
   const hasCurrentAnswer = Boolean(
     answers[currentQuestion.id] ||

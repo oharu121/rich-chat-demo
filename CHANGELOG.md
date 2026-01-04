@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-04
+
+### Added
+
+- **Agent Context Persistence with Zustand Store**: Frontend now maintains structured context per agent
+  - Context persists in localStorage across page refreshes
+  - Each agent has isolated context (travel context separate from other agents)
+  - Context sent with every API request - backend uses it directly instead of re-extracting
+  - Questionnaire answers merge with existing context before submission
+
+### Fixed
+
+- **Destination No Longer Lost After Form Submission**: Travel agent now reliably remembers destination
+  - Previously: LLM extraction from chat history was unreliable, causing "where would you like to go?" after form submit
+  - Now: Frontend Zustand store captures questionnaire context and sends it with each request
+  - Backend uses provided context directly when available, falls back to LLM extraction only if needed
+
+### Technical
+
+- New `frontend/stores/agentContext.ts` - Zustand store with localStorage persistence
+- Updated `ChatInterface.tsx`:
+  - `handleSendMessage` includes context from store
+  - `handleQuestionSubmit` merges answers with existing context and updates store
+  - `handleClearMessages` clears both messages and agent contexts
+- Updated `TravelQuestionnaire.tsx` - passes existing context on submit
+- Updated `MessageBubble.tsx` - callback signature includes context
+- Updated `frontend/lib/api.ts` - `streamChat()` accepts optional context parameter
+- Updated `frontend/hooks/useChat.ts` - `sendMessage()` accepts optional context parameter
+- Updated `backend/app/models/schemas.py` - `ChatRequest` model includes `context: Optional[dict]`
+- Updated `backend/app/routers/chat.py` - passes context to agent's `stream_response()`
+- Updated `backend/app/agents/base.py` - abstract method signature includes `context: dict | None`
+- Updated all agents to accept context parameter (default, code, search, explain, rag, travel)
+- Added `zustand` dependency to frontend
+- Documentation added to `.dev-notes/2026-01-03.md`
+
 ## [0.7.1] - 2026-01-04
 
 ### Fixed
