@@ -5,6 +5,7 @@ import { MayaAvatar, type AvatarState } from "./MayaAvatar";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AgentBadge } from "./AgentBadge";
 import { TravelQuestionForm } from "./TravelQuestionForm";
+import { TravelQuestionnaire } from "./TravelQuestionnaire";
 
 /**
  * Check if a bracketed text is a citation
@@ -179,8 +180,22 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
             </div>
           )}
 
-          {/* Travel questions form */}
-          {message.questions && message.questions.length > 0 && !message.isStreaming && (
+          {/* Multi-step questionnaire (new Claude Code style) */}
+          {message.questionnaire && message.questionnaire.steps.length > 0 && !message.isStreaming && (
+            <div className="mt-3">
+              <TravelQuestionnaire
+                questionnaire={message.questionnaire}
+                onSubmit={(answers) => {
+                  if (onQuestionSubmit && message.agent) {
+                    onQuestionSubmit(answers, message.agent);
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Legacy travel questions form */}
+          {message.questions && message.questions.length > 0 && !message.questionnaire && !message.isStreaming && (
             <div className="mt-3">
               <TravelQuestionForm
                 questions={message.questions}

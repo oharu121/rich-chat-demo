@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-04
+
+### Added
+
+- **LLM-Powered Dynamic Question Generation**: Travel agent now uses Gemini to intelligently gather trip details
+  - Semantic context extraction replaces brittle regex/keyword matching
+  - Only asks questions for missing information (e.g., won't ask duration if user said "5 days")
+  - Destination-aware options (Brazil gets "Amazon Rainforest", "Rio Carnival" instead of generic "Nature")
+  - Real-time status feedback: "Analyzing your request...", "Preparing questions..."
+
+- **Claude Code Style Multi-Step Questionnaire**: New wizard UI for travel intake
+  - Progress bar showing current step (e.g., "1 of 2")
+  - Auto-advance on single-select questions
+  - "Continue" button for multi-select questions
+  - Back navigation between steps
+  - "Other" text input for custom answers
+  - Header labels for each question category
+
+### Changed
+
+- **Travel Agent Architecture**: Complete rewrite with LLM-powered intake
+  - New `TravelContext` Pydantic model for structured context extraction
+  - Gemini JSON mode (`response_mime_type="application/json"`) for reliable extraction
+  - Fallback to static questions if LLM generation fails
+
+### Technical
+
+- New `backend/app/agents/travel_context.py` - Pydantic model with `get_missing_required()` method
+- Rewritten `backend/app/agents/travel_agent.py`:
+  - `_extract_context()` - LLM extracts travel info from conversation
+  - `_generate_questions()` - LLM generates contextual questions
+  - `_call_gemini_json()` - Helper for JSON-mode API calls
+  - Removed: `TRAVEL_QUESTIONS`, `_extract_destination()`, `_has_travel_details()`, `_find_destination_in_history()`
+- New `frontend/app/components/TravelQuestionnaire.tsx` - Multi-step wizard component
+- New TypeScript types: `QuestionStep`, `Questionnaire`, `SSEQuestionnaireEvent`
+- Updated `useChat.ts` to handle `questionnaire` SSE event
+- Updated `chat.py` router to forward `questionnaire` event
+- Documentation updated in `.dev-notes/2026-01-03.md`
+
 ## [0.6.2] - 2026-01-03
 
 ### Fixed

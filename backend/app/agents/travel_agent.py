@@ -1,65 +1,41 @@
 """
-Travel planning agent using CrewAI multi-agent system.
+Travel planning agent using CrewAI multi-agent system with LLM-powered intake.
+
+This agent uses Gemini to:
+1. Extract travel context from conversation (semantic understanding)
+2. Generate dynamic questions based on what's missing
+3. Create contextual options based on the destination
 """
 
 import asyncio
-import re
+import json
+import logging
 import threading
 from collections.abc import AsyncIterator
 from queue import Queue
 
 from crewai import Agent, Task, Crew, Process, LLM
+from google import genai
+from google.genai import types
 
 from app.core.config import settings
 
 from .base import BaseAgent
+from .travel_context import TravelContext
 
-
-# Default travel questions when info is missing
-TRAVEL_QUESTIONS = [
-    {
-        "id": "duration",
-        "question": "How long is your trip?",
-        "options": [
-            {"label": "3-5 days", "value": "3-5 days"},
-            {"label": "1-2 weeks", "value": "1-2 weeks"},
-            {"label": "2+ weeks", "value": "2+ weeks"},
-        ],
-        "multiSelect": False,
-        "allowCustom": True,
-    },
-    {
-        "id": "budget",
-        "question": "What's your budget range?",
-        "options": [
-            {"label": "Budget ($50-100/day)", "value": "budget"},
-            {"label": "Mid-range ($100-200/day)", "value": "mid-range"},
-            {"label": "Luxury ($200+/day)", "value": "luxury"},
-        ],
-        "multiSelect": False,
-        "allowCustom": False,
-    },
-    {
-        "id": "interests",
-        "question": "What interests you most? (select all that apply)",
-        "options": [
-            {"label": "Nature & Landscapes", "value": "nature"},
-            {"label": "Culture & History", "value": "culture"},
-            {"label": "Adventure Activities", "value": "adventure"},
-            {"label": "Food & Markets", "value": "food"},
-        ],
-        "multiSelect": True,
-        "allowCustom": True,
-    },
-]
+logger = logging.getLogger(__name__)
 
 
 class TravelAgent(BaseAgent):
-    """Multi-agent travel planning using CrewAI."""
+    """Multi-agent travel planning using CrewAI with LLM-powered intake."""
 
     name = "Travel Planner"
     description = "Plan trips with a team of AI travel specialists"
     icon = "plane"
+
+    def __init__(self):
+        """Initialize the travel agent with Gemini client."""
+        self._gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def _create_llm(self) -> LLM:
         """Create LLM instance for CrewAI agents."""
@@ -69,85 +45,236 @@ class TravelAgent(BaseAgent):
             max_tokens=800,
         )
 
-    def _extract_destination(self, message: str) -> str | None:
-        """Extract destination from user message."""
-        message_lower = message.lower()
+    def _format_history(self, history: list[dict]) -> str:
+        """Format conversation history for LLM prompts."""
+        if not history:
+            return "No previous conversation."
 
-        # Common patterns: "go to X", "visit X", "trip to X", "travel to X"
-        patterns = [
-            r"(?:go|going|trip|travel|visit|visiting|fly|flying)\s+to\s+([A-Za-z\s,]+)",
-            r"(?:plan|planning)\s+(?:a\s+)?(?:trip|visit)\s+to\s+([A-Za-z\s,]+)",
-            r"^([A-Za-z\s,]+)$",  # Just the destination name
-        ]
+        formatted = []
+        for msg in history[-6:]:  # Last 6 messages for context
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            formatted.append(f"{role.upper()}: {content}")
+        return "\n".join(formatted)
 
-        for pattern in patterns:
-            match = re.search(pattern, message, re.IGNORECASE)
-            if match:
-                destination = match.group(1).strip()
-                # Clean up common trailing words
-                destination = re.sub(r"\s+(for|in|during|next|this).*$", "", destination, flags=re.IGNORECASE)
-                if destination and len(destination) > 2:
-                    return destination
+    async def _call_gemini_json(self, prompt: str) -> dict:
+        """Call Gemini API expecting JSON response.
 
-        return None
-
-    def _has_travel_details(self, message: str, history: list[dict]) -> bool:
-        """Check if user has provided travel details (duration, budget, interests)."""
-        combined = message.lower()
-        for msg in history[-4:]:  # Check recent history
-            combined += " " + msg.get("content", "").lower()
-
-        # Check for duration keywords
-        has_duration = any(word in combined for word in [
-            "days", "day", "week", "weeks", "month",
-            "short", "long", "quick", "extended",
-        ])
-
-        # Check for budget keywords
-        has_budget = any(word in combined for word in [
-            "budget", "cheap", "luxury", "mid-range", "midrange",
-            "affordable", "expensive", "$", "dollar", "cost",
-        ])
-
-        # Check for interest keywords
-        has_interests = any(word in combined for word in [
-            "nature", "culture", "history", "adventure", "food",
-            "beach", "mountain", "city", "museum", "hiking",
-            "relaxation", "sightseeing", "shopping",
-        ])
-
-        # Also check if this is a follow-up with preferences
-        has_preferences = "preferences" in combined or "here are my" in combined
-
-        return (has_duration and has_budget) or has_preferences or (has_duration and has_interests)
-
-    def _find_destination_in_history(self, history: list[dict]) -> str | None:
+        Uses response_mime_type for reliable JSON output.
         """
-        Search conversation history for a destination.
+        try:
+            response = await asyncio.to_thread(
+                self._gemini_client.models.generate_content,
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.3,  # Lower temp for more consistent extraction
+                ),
+            )
 
-        This is needed when user submits preferences via the question form,
-        as the destination was mentioned in an earlier message.
+            if response.text:
+                return json.loads(response.text)
+            return {}
+
+        except Exception as e:
+            logger.error(f"Gemini JSON call failed: {e}")
+            return {}
+
+    async def _extract_context(
+        self, message: str, history: list[dict]
+    ) -> TravelContext:
+        """Use LLM to extract travel context from conversation.
+
+        This replaces the brittle regex-based detection with semantic understanding.
         """
-        # Look through recent history for a destination
-        for msg in reversed(history[-6:]):
-            if msg.get("role") == "user":
-                destination = self._extract_destination(msg.get("content", ""))
-                if destination:
-                    return destination
-            # Also check assistant messages for "destination is X" patterns
-            elif msg.get("role") == "assistant":
-                content = msg.get("content", "")
-                # Look for patterns like "**Brazil** is an amazing destination"
-                match = re.search(
-                    r"\*\*([A-Za-z\s]+)\*\*\s+is\s+(?:an?\s+)?(?:amazing|great|wonderful|fantastic)",
-                    content,
-                    re.IGNORECASE,
-                )
-                if match:
-                    return match.group(1).strip()
-        return None
+        prompt = f"""Extract travel planning information from this conversation.
+Return JSON matching this exact schema:
 
-    def _create_crew(self, query: str, context: str, output_queue: Queue) -> Crew:
+{{
+    "destination": string or null,
+    "duration": string or null,
+    "budget": string or null,
+    "interests": array of strings or null,
+    "travel_dates": string or null,
+    "group_size": string or null,
+    "special_requirements": string or null
+}}
+
+Rules:
+- Only include fields that are EXPLICITLY mentioned
+- Use null for unknown/unmentioned fields
+- For duration, extract phrases like "5 days", "2 weeks", "a week"
+- For budget, extract "budget", "mid-range", "luxury" or specific amounts
+- For interests, extract as array: ["nature", "culture", "adventure", etc.]
+
+Conversation history:
+{self._format_history(history)}
+
+Latest message: {message}
+
+Return ONLY the JSON object, no explanation."""
+
+        result = await self._call_gemini_json(prompt)
+
+        try:
+            return TravelContext.model_validate(result)
+        except Exception as e:
+            logger.error(f"Failed to validate TravelContext: {e}")
+            return TravelContext()
+
+    async def _generate_questions(
+        self, context: TravelContext, missing: list[str]
+    ) -> list[dict]:
+        """Generate contextual questions for missing fields.
+
+        Questions are tailored to the destination and only ask about
+        what's actually missing.
+        """
+        # Map field names to question metadata
+        field_info = {
+            "duration": {
+                "header": "Duration",
+                "base_question": "How long will you be staying",
+                "multiSelect": False,
+                "allowCustom": True,
+            },
+            "budget": {
+                "header": "Budget",
+                "base_question": "What's your budget range",
+                "multiSelect": False,
+                "allowCustom": False,
+            },
+            "interests": {
+                "header": "Interests",
+                "base_question": "What interests you most",
+                "multiSelect": True,
+                "allowCustom": True,
+            },
+        }
+
+        prompt = f"""Generate intake questions for trip planning to {context.destination or 'the destination'}.
+
+Generate questions ONLY for these missing fields: {missing}
+
+For each field, generate contextual options based on the destination.
+Make options specific and relevant to {context.destination or 'general travel'}.
+
+Return JSON array with this exact structure for each question:
+[
+    {{
+        "id": "field_name",
+        "header": "Short Label",
+        "question": "Full question text?",
+        "options": [
+            {{"label": "Display text", "value": "value_to_store", "description": "Optional explanation"}}
+        ],
+        "multiSelect": boolean,
+        "allowCustom": boolean
+    }}
+]
+
+Examples for {context.destination or 'Brazil'}:
+
+For "duration":
+{{
+    "id": "duration",
+    "header": "Duration",
+    "question": "How long will you be staying in {context.destination or 'Brazil'}?",
+    "options": [
+        {{"label": "3-5 days", "value": "3-5 days", "description": "Quick getaway"}},
+        {{"label": "1-2 weeks", "value": "1-2 weeks", "description": "Good for exploring"}},
+        {{"label": "2+ weeks", "value": "2+ weeks", "description": "In-depth experience"}}
+    ],
+    "multiSelect": false,
+    "allowCustom": true
+}}
+
+For "interests" with destination "Brazil":
+{{
+    "id": "interests",
+    "header": "Interests",
+    "question": "What interests you about Brazil? (select multiple)",
+    "options": [
+        {{"label": "Amazon Rainforest", "value": "amazon", "description": "Wildlife & jungle tours"}},
+        {{"label": "Beaches & Rio", "value": "beaches", "description": "Copacabana, Ipanema"}},
+        {{"label": "Culture & Carnival", "value": "culture", "description": "Music, dance, festivals"}},
+        {{"label": "Adventure Sports", "value": "adventure", "description": "Hiking, surfing"}}
+    ],
+    "multiSelect": true,
+    "allowCustom": true
+}}
+
+Generate {len(missing)} question(s) for: {missing}
+Make options SPECIFIC to {context.destination or 'the destination'}.
+
+Return ONLY the JSON array."""
+
+        result = await self._call_gemini_json(prompt)
+
+        # Validate and ensure we have valid questions
+        if isinstance(result, list) and len(result) > 0:
+            # Add fallback values for any missing fields
+            for q in result:
+                if "id" not in q:
+                    continue
+                field = q["id"]
+                if field in field_info:
+                    q.setdefault("header", field_info[field]["header"])
+                    q.setdefault("multiSelect", field_info[field]["multiSelect"])
+                    q.setdefault("allowCustom", field_info[field]["allowCustom"])
+            return result
+
+        # Fallback to static questions if LLM fails
+        logger.warning("LLM question generation failed, using fallback")
+        return self._get_fallback_questions(missing, context.destination)
+
+    def _get_fallback_questions(
+        self, missing: list[str], destination: str | None
+    ) -> list[dict]:
+        """Fallback static questions if LLM generation fails."""
+        fallback = {
+            "duration": {
+                "id": "duration",
+                "header": "Duration",
+                "question": f"How long will you be staying{' in ' + destination if destination else ''}?",
+                "options": [
+                    {"label": "3-5 days", "value": "3-5 days"},
+                    {"label": "1-2 weeks", "value": "1-2 weeks"},
+                    {"label": "2+ weeks", "value": "2+ weeks"},
+                ],
+                "multiSelect": False,
+                "allowCustom": True,
+            },
+            "budget": {
+                "id": "budget",
+                "header": "Budget",
+                "question": "What's your budget range?",
+                "options": [
+                    {"label": "Budget ($50-100/day)", "value": "budget"},
+                    {"label": "Mid-range ($100-200/day)", "value": "mid-range"},
+                    {"label": "Luxury ($200+/day)", "value": "luxury"},
+                ],
+                "multiSelect": False,
+                "allowCustom": False,
+            },
+            "interests": {
+                "id": "interests",
+                "header": "Interests",
+                "question": "What interests you most? (select multiple)",
+                "options": [
+                    {"label": "Nature & Landscapes", "value": "nature"},
+                    {"label": "Culture & History", "value": "culture"},
+                    {"label": "Adventure Activities", "value": "adventure"},
+                    {"label": "Food & Markets", "value": "food"},
+                ],
+                "multiSelect": True,
+                "allowCustom": True,
+            },
+        }
+        return [fallback[field] for field in missing if field in fallback]
+
+    def _create_crew(self, context: TravelContext, output_queue: Queue) -> Crew:
         """Create the travel planning crew with specialized agents."""
         llm = self._create_llm()
 
@@ -168,7 +295,7 @@ class TravelAgent(BaseAgent):
         planner = Agent(
             role="Itinerary Planner",
             goal="Create a brief sample itinerary",
-            backstory="You create simple 3-day itineraries with morning and afternoon activities. Keep descriptions short.",
+            backstory="You create simple itineraries with morning and afternoon activities. Keep descriptions short.",
             llm=llm,
             verbose=False,
         )
@@ -182,11 +309,15 @@ class TravelAgent(BaseAgent):
             verbose=False,
         )
 
+        # Build context string for tasks
+        context_str = context.to_context_string()
+
         # Tasks with concise expected outputs
         research_task = Task(
-            description=f"""Research this destination: {query}
+            description=f"""Research this destination: {context.destination}
 
-User preferences: {context}
+User preferences:
+{context_str}
 
 Provide:
 - Top 5 must-see attractions (1 sentence each)
@@ -197,27 +328,29 @@ Provide:
         )
 
         itinerary_task = Task(
-            description=f"""Create a 3-day sample itinerary for {query}.
+            description=f"""Create a sample itinerary for {context.destination}.
 
-User preferences: {context}
+User preferences:
+{context_str}
 
 Format as:
 Day 1: Morning - X, Afternoon - Y
 Day 2: Morning - X, Afternoon - Y
-Day 3: Morning - X, Afternoon - Y""",
-            expected_output="3-day itinerary under 150 words",
+(Continue for duration: {context.duration or '3 days'})""",
+            expected_output="Itinerary under 200 words",
             agent=planner,
             context=[research_task],
         )
 
         budget_task = Task(
-            description=f"""Estimate travel budget for {query}.
+            description=f"""Estimate travel budget for {context.destination}.
 
-User preferences: {context}
+User preferences:
+{context_str}
 
 Provide:
 - Flights estimate (range)
-- Hotels per night (range)
+- Hotels per night (range based on {context.budget or 'mid-range'} budget)
 - Daily expenses
 - One money-saving tip""",
             expected_output="Budget breakdown under 100 words",
@@ -239,31 +372,45 @@ Provide:
         history: list[dict],
     ) -> AsyncIterator[tuple[str, str | dict | list[dict]]]:
         """
-        Execute travel planning crew and stream results.
+        Execute travel planning with LLM-powered intake.
 
         Flow:
-        1. If destination found but no details → emit questions event
-        2. If has details → run crew and stream each agent's output
+        1. Extract context using LLM (semantic understanding)
+        2. If missing required fields → generate dynamic questions
+        3. If complete → run CrewAI planning agents
         """
-        destination = self._extract_destination(message)
+        # Step 1: Show analyzing status
+        yield ("status", "Analyzing your request...")
 
-        # If no destination in current message, check history (for follow-up with preferences)
-        if not destination and self._has_travel_details(message, history):
-            destination = self._find_destination_in_history(history)
+        # Step 2: Extract context with LLM
+        context = await self._extract_context(message, history)
+        logger.info(f"Extracted context: {context.model_dump()}")
 
-        if not destination:
-            yield ("token", "I'd be happy to help plan your trip! Could you tell me where you'd like to go?")
+        # Step 3: Check if we have a destination
+        if not context.destination:
+            yield ("token", "I'd love to help plan your trip! Where would you like to go?")
             return
 
-        # Check if we have enough details to plan
-        if not self._has_travel_details(message, history):
-            # Emit questions for interactive intake
-            yield ("token", f"Great choice! **{destination.title()}** is an amazing destination. Let me gather a few details to create the perfect plan for you.\n\n")
-            yield ("questions", {"questions": TRAVEL_QUESTIONS})
+        # Step 4: Check what's missing
+        missing = context.get_missing_required()
+
+        if missing:
+            # Step 5: Generate dynamic questions for missing fields
+            yield ("status", "Preparing questions...")
+
+            questions = await self._generate_questions(context, missing)
+            logger.info(f"Generated {len(questions)} questions for missing fields: {missing}")
+
+            # Step 6: Emit questionnaire
+            yield ("questionnaire", {
+                "title": f"Planning trip to {context.destination}",
+                "steps": questions,
+                "context": context.model_dump(exclude_none=True),
+            })
             return
 
-        # We have details - run the crew
-        yield ("status", "researching destinations")
+        # Step 7: All required info gathered - run planning crew
+        yield ("status", "Planning your trip...")
 
         output_queue: Queue = Queue()
         agent_names = ["Research", "Itinerary", "Budget"]
@@ -274,17 +421,12 @@ Provide:
         ]
         current_agent_idx = 0
 
-        # Build context from message and recent history
-        context = message
-        for msg in history[-2:]:
-            if msg.get("role") == "user":
-                context += "\n" + msg.get("content", "")
-
         def run_crew():
             try:
-                crew = self._create_crew(destination, context, output_queue)
+                crew = self._create_crew(context, output_queue)
                 crew.kickoff()
             except Exception as e:
+                logger.error(f"Crew execution failed: {e}")
                 output_queue.put(("error", str(e)))
             finally:
                 output_queue.put(("done", None))
@@ -313,7 +455,7 @@ Provide:
                     # Stream content in chunks
                     chunk_size = 50
                     for i in range(0, len(data), chunk_size):
-                        chunk = data[i:i + chunk_size]
+                        chunk = data[i : i + chunk_size]
                         yield ("token", chunk)
                         await asyncio.sleep(0.01)
 

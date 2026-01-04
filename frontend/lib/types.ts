@@ -20,7 +20,8 @@ export interface Message {
   isStreaming?: boolean;
   agent?: AgentType;
   sources?: Source[];
-  questions?: TravelQuestion[];
+  questions?: TravelQuestion[];  // Legacy single-form questions
+  questionnaire?: Questionnaire;  // Multi-step wizard questionnaire
 }
 
 // Slash command definition
@@ -71,7 +72,7 @@ export interface SSESourcesEvent {
   };
 }
 
-// Travel question for interactive intake
+// Travel question for interactive intake (legacy - single form)
 export interface TravelQuestion {
   id: string;
   question: string;
@@ -87,7 +88,32 @@ export interface SSEQuestionsEvent {
   };
 }
 
-export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent | SSEQuestionsEvent;
+// Questionnaire step (Claude Code style - multi-step wizard)
+export interface QuestionStep {
+  id: string;
+  header: string;  // Short label like "Duration", "Budget" (max 12 chars)
+  question: string;  // Full question text
+  options: Array<{
+    label: string;  // Display text
+    value: string;  // Value to send back
+    description?: string;  // Optional description below label
+  }>;
+  multiSelect: boolean;  // true = checkboxes, false = radio (auto-advance)
+  allowCustom: boolean;  // Show "Other" text input
+}
+
+export interface Questionnaire {
+  title: string;  // "Planning trip to Brazil"
+  steps: QuestionStep[];  // Array of questions (only missing fields)
+  context: Record<string, unknown>;  // Already known: {destination: "Brazil"}
+}
+
+export interface SSEQuestionnaireEvent {
+  type: "questionnaire";
+  data: Questionnaire;
+}
+
+export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent | SSEQuestionsEvent | SSEQuestionnaireEvent;
 
 // API response types
 export interface AgentInfo {

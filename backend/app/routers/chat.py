@@ -68,6 +68,8 @@ async def stream_chat_response(request: ChatRequest):
                     yield format_sse("sources", {"sources": content})
                 elif event_type == "questions" and isinstance(content, dict):
                     yield format_sse("questions", content)
+                elif event_type == "questionnaire" and isinstance(content, dict):
+                    yield format_sse("questionnaire", content)
             # Legacy format: plain string token
             else:
                 yield format_sse("token", {"token": item})
