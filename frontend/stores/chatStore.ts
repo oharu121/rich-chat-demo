@@ -1,15 +1,19 @@
 /**
- * Chat state store using Zustand with localStorage persistence.
+ * Chat state store using Zustand with sessionStorage persistence.
  *
  * Manages:
- * - messages: Chat history (persisted)
- * - currentAgent: Active agent type (persisted)
+ * - messages: Chat history (persisted within browser session)
+ * - currentAgent: Active agent type (persisted within browser session)
+ *
+ * Uses sessionStorage instead of localStorage so chat history clears
+ * when the browser is closed. This prevents stale conversations from
+ * persisting indefinitely.
  *
  * Ephemeral state (isLoading, error, currentStatus) remains in useChat hook.
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Message, AgentType } from "@/lib/types";
 
 interface ChatState {
@@ -51,6 +55,9 @@ export const useChatStore = create<ChatState>()(
 
       clearChat: () => set({ messages: [], currentAgent: "default" }),
     }),
-    { name: "chat-storage" }
+    {
+      name: "chat-storage",
+      storage: createJSONStorage(() => sessionStorage),
+    }
   )
 );

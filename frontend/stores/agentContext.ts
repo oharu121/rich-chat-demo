@@ -1,13 +1,13 @@
 /**
  * Zustand store for agent-specific context.
  *
- * Each agent (travel, code, etc.) has its own context slice that persists
- * across chat messages. This eliminates the need to re-extract context
- * from conversation history.
+ * Each agent (travel, code, etc.) has its own context slice that lives
+ * in memory for the current session. Context is NOT persisted across
+ * browser sessions to avoid stale data (e.g., old trip preferences
+ * being applied to new destinations).
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { AgentType } from "@/lib/types";
 
 // Travel agent context
@@ -54,46 +54,37 @@ const emptyTravelContext: TravelContext = {
   special_requirements: null,
 };
 
-// Create the store with localStorage persistence
-export const useAgentContextStore = create<AgentContextState>()(
-  persist(
-    (set, get) => ({
-      contexts: {},
+// Create the store (in-memory only, no persistence)
+export const useAgentContextStore = create<AgentContextState>()((set, get) => ({
+  contexts: {},
 
-      getContext: (agent: AgentType) => {
-        return get().contexts[agent];
-      },
+  getContext: (agent: AgentType) => {
+    return get().contexts[agent];
+  },
 
-      updateContext: (agent: AgentType, context: Partial<AgentContext>) => {
-        set((state) => {
-          const existing = state.contexts[agent] || getDefaultContext(agent);
-          return {
-            contexts: {
-              ...state.contexts,
-              [agent]: { ...existing, ...context },
-            },
-          };
-        });
-      },
+  updateContext: (agent: AgentType, context: Partial<AgentContext>) => {
+    set((state) => {
+      const existing = state.contexts[agent] || getDefaultContext(agent);
+      return {
+        contexts: {
+          ...state.contexts,
+          [agent]: { ...existing, ...context },
+        },
+      };
+    });
+  },
 
-      clearContext: (agent: AgentType) => {
-        set((state) => {
-          const { [agent]: _, ...rest } = state.contexts;
-          return { contexts: rest };
-        });
-      },
+  clearContext: (agent: AgentType) => {
+    set((state) => {
+      const { [agent]: _, ...rest } = state.contexts;
+      return { contexts: rest };
+    });
+  },
 
-      clearAllContexts: () => {
-        set({ contexts: {} });
-      },
-    }),
-    {
-      name: "agent-context-storage",
-      // Only persist specific fields, not functions
-      partialize: (state) => ({ contexts: state.contexts }),
-    }
-  )
-);
+  clearAllContexts: () => {
+    set({ contexts: {} });
+  },
+}));
 
 // Get default context for an agent type
 function getDefaultContext(agent: AgentType): AgentContext {

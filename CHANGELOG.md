@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-01-05
+
+### Fixed
+
+- **Travel Context No Longer Persists Incorrectly**: Questionnaire now always appears for new trips
+  - Previously: Old trip preferences (duration, budget from Japan trip) persisted in localStorage and were applied to new destinations (Brazil), causing the questionnaire to be skipped
+  - Now: Agent context is in-memory only (clears on page refresh), chat history uses sessionStorage (clears when browser closes)
+  - Each new trip conversation starts fresh without stale preferences
+
+### Changed
+
+- **State Persistence Strategy**: Aligned with industry best practices for chat applications
+  - Agent context (`agentContext.ts`): Removed `persist` middleware - now in-memory only
+  - Chat history (`chatStore.ts`): Changed from localStorage to sessionStorage
+  - Data now clears when browser is closed, preventing stale context issues
+
+### Technical
+
+- `frontend/stores/agentContext.ts`: Removed `persist` middleware wrapper, context is now ephemeral
+- `frontend/stores/chatStore.ts`: Added `createJSONStorage(() => sessionStorage)` to persist config
+- Documentation added to `.dev-notes/2026-01-05.md` with industry research on chat persistence best practices
+
 ## [0.8.1] - 2026-01-05
 
 ### Fixed
