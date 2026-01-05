@@ -70,6 +70,13 @@ async def stream_chat_response(request: ChatRequest):
                     yield format_sse("questions", content)
                 elif event_type == "questionnaire" and isinstance(content, dict):
                     yield format_sse("questionnaire", content)
+                # Rich travel UI events
+                elif event_type == "travel_highlights" and isinstance(content, dict):
+                    yield format_sse("travel_highlights", content)
+                elif event_type == "travel_itinerary" and isinstance(content, dict):
+                    yield format_sse("travel_itinerary", content)
+                elif event_type == "travel_budget" and isinstance(content, dict):
+                    yield format_sse("travel_budget", content)
             # Legacy format: plain string token
             else:
                 yield format_sse("token", {"token": item})

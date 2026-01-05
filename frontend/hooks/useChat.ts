@@ -120,6 +120,21 @@ export function useChat() {
             });
             break;
 
+          case "travel_highlights":
+            setCurrentStatus(null);
+            updateLastMessage({ travelHighlights: event.data });
+            break;
+
+          case "travel_itinerary":
+            setCurrentStatus(null);
+            updateLastMessage({ travelItinerary: event.data });
+            break;
+
+          case "travel_budget":
+            setCurrentStatus(null);
+            updateLastMessage({ travelBudget: event.data });
+            break;
+
           case "error": {
             const errorCode = event.data.code;
             const errorMessage = errorCode && ERROR_CODE_MESSAGES[errorCode]
@@ -216,6 +231,21 @@ export function useChat() {
 
           case "sources":
             updateLastMessage({ sources: event.data.sources });
+            break;
+
+          case "travel_highlights":
+            setCurrentStatus(null);
+            updateLastMessage({ travelHighlights: event.data });
+            break;
+
+          case "travel_itinerary":
+            setCurrentStatus(null);
+            updateLastMessage({ travelItinerary: event.data });
+            break;
+
+          case "travel_budget":
+            setCurrentStatus(null);
+            updateLastMessage({ travelBudget: event.data });
             break;
 
           case "error": {

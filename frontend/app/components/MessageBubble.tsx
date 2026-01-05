@@ -6,6 +6,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { AgentBadge } from "./AgentBadge";
 import { TravelQuestionForm } from "./TravelQuestionForm";
 import { TravelQuestionnaire } from "./TravelQuestionnaire";
+import { DestinationHighlights, ItineraryTimeline, BudgetSummary } from "./travel";
 
 /**
  * Check if a bracketed text is a citation
@@ -286,6 +287,25 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
                   }
                 }}
               />
+            </div>
+          )}
+
+          {/* Rich Travel UI - Separate bubbles for highlights, itinerary, budget */}
+          {message.travelHighlights && !message.isStreaming && (
+            <div className="mt-4">
+              <DestinationHighlights data={message.travelHighlights} />
+            </div>
+          )}
+
+          {message.travelItinerary && !message.isStreaming && (
+            <div className="mt-4">
+              <ItineraryTimeline data={message.travelItinerary} />
+            </div>
+          )}
+
+          {message.travelBudget && !message.isStreaming && (
+            <div className="mt-4">
+              <BudgetSummary data={message.travelBudget} />
             </div>
           )}
         </div>

@@ -275,36 +275,44 @@ Return ONLY the JSON array."""
         return [fallback[field] for field in missing if field in fallback]
 
     def _create_crew(self, context: TravelContext, output_queue: Queue) -> Crew:
-        """Create the travel planning crew with specialized agents."""
+        """Create the travel planning crew with specialized agents.
+
+        Each agent returns structured JSON for rich UI rendering.
+        """
         llm = self._create_llm()
+
+        task_names = ["highlights", "itinerary", "budget"]
+        task_idx = [0]  # Use list to allow mutation in closure
 
         def on_task_complete(task_output):
             """Callback after each task completes."""
-            output_queue.put(("task_done", task_output.raw))
+            task_name = task_names[task_idx[0]] if task_idx[0] < len(task_names) else "unknown"
+            output_queue.put(("task_done", task_name, task_output.raw))
+            task_idx[0] += 1
 
-        # Research Agent
+        # Research Agent - returns structured highlights JSON
         researcher = Agent(
             role="Travel Researcher",
-            goal="Research key travel information concisely",
-            backstory="You provide brief, helpful destination highlights. Focus on top 5 attractions, best time to visit, and 2 local tips. Keep it concise.",
+            goal="Research key travel information and return structured JSON",
+            backstory="You provide destination highlights in JSON format. Focus on top 5 attractions with image search queries, best time to visit, and 2 local tips.",
             llm=llm,
             verbose=False,
         )
 
-        # Itinerary Agent
+        # Itinerary Agent - returns structured itinerary JSON
         planner = Agent(
             role="Itinerary Planner",
-            goal="Create a brief sample itinerary",
-            backstory="You create simple itineraries with morning and afternoon activities. Keep descriptions short.",
+            goal="Create a sample itinerary and return structured JSON",
+            backstory="You create itineraries in JSON format with morning, afternoon, and evening activities for each day.",
             llm=llm,
             verbose=False,
         )
 
-        # Budget Agent
+        # Budget Agent - returns structured budget JSON
         budget_analyst = Agent(
             role="Budget Analyst",
-            goal="Provide quick budget estimates",
-            backstory="You give simple budget breakdowns: flights, hotels, daily costs. Include one money-saving tip.",
+            goal="Provide budget estimates and return structured JSON",
+            backstory="You give budget breakdowns in JSON format: flights, hotels, food, activities, and one money-saving tip.",
             llm=llm,
             verbose=False,
         )
@@ -312,18 +320,26 @@ Return ONLY the JSON array."""
         # Build context string for tasks
         context_str = context.to_context_string()
 
-        # Tasks with concise expected outputs
+        # Tasks with JSON output format
         research_task = Task(
             description=f"""Research this destination: {context.destination}
 
 User preferences:
 {context_str}
 
-Provide:
-- Top 5 must-see attractions (1 sentence each)
-- Best time to visit
-- 2 local tips""",
-            expected_output="Concise destination guide under 200 words",
+Return a JSON object with this EXACT structure:
+{{
+    "destination": "{context.destination}",
+    "bestTimeToVisit": "Month to Month (reason)",
+    "tips": ["tip 1", "tip 2"],
+    "attractions": [
+        {{"name": "Attraction Name", "description": "One sentence description", "imageQuery": "attraction name {context.destination}"}},
+        ... (5 attractions total)
+    ]
+}}
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
+            expected_output="Valid JSON object with destination highlights",
             agent=researcher,
         )
 
@@ -332,12 +348,27 @@ Provide:
 
 User preferences:
 {context_str}
+Duration: {context.duration or '3 days'}
 
-Format as:
-Day 1: Morning - X, Afternoon - Y
-Day 2: Morning - X, Afternoon - Y
-(Continue for duration: {context.duration or '3 days'})""",
-            expected_output="Itinerary under 200 words",
+Return a JSON object with this EXACT structure:
+{{
+    "duration": "{context.duration or '3 days'}",
+    "days": [
+        {{
+            "day": 1,
+            "title": "City/Area Name",
+            "activities": [
+                {{"time": "morning", "activity": "Activity name", "description": "Brief description"}},
+                {{"time": "afternoon", "activity": "Activity name", "description": "Brief description"}},
+                {{"time": "evening", "activity": "Activity name", "description": "Brief description"}}
+            ]
+        }},
+        ... (one entry per day)
+    ]
+}}
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
+            expected_output="Valid JSON object with itinerary",
             agent=planner,
             context=[research_task],
         )
@@ -347,13 +378,23 @@ Day 2: Morning - X, Afternoon - Y
 
 User preferences:
 {context_str}
+Budget level: {context.budget or 'mid-range'}
 
-Provide:
-- Flights estimate (range)
-- Hotels per night (range based on {context.budget or 'mid-range'} budget)
-- Daily expenses
-- One money-saving tip""",
-            expected_output="Budget breakdown under 100 words",
+Return a JSON object with this EXACT structure:
+{{
+    "totalRange": "$X,XXX - $X,XXX",
+    "categories": [
+        {{"category": "Flights", "icon": "✈️", "range": "$XXX - $XXX"}},
+        {{"category": "Accommodation", "icon": "🏨", "range": "$XXX - $XXX"}},
+        {{"category": "Food & Dining", "icon": "🍽️", "range": "$XXX - $XXX"}},
+        {{"category": "Activities", "icon": "🎯", "range": "$XXX - $XXX"}},
+        {{"category": "Transportation", "icon": "🚌", "range": "$XXX - $XXX"}}
+    ],
+    "tip": "One money-saving tip"
+}}
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
+            expected_output="Valid JSON object with budget breakdown",
             agent=budget_analyst,
             context=[research_task],
         )
@@ -425,13 +466,6 @@ Provide:
         yield ("status", "Planning your trip...")
 
         output_queue: Queue = Queue()
-        agent_names = ["Research", "Itinerary", "Budget"]
-        headers = [
-            "## Destination Highlights",
-            "## Sample Itinerary",
-            "## Budget Estimate",
-        ]
-        current_agent_idx = 0
 
         def run_crew():
             try:
@@ -439,39 +473,49 @@ Provide:
                 crew.kickoff()
             except Exception as e:
                 logger.error(f"Crew execution failed: {e}")
-                output_queue.put(("error", str(e)))
+                output_queue.put(("error", None, str(e)))
             finally:
-                output_queue.put(("done", None))
+                output_queue.put(("done", None, None))
 
         # Start crew in background thread
         thread = threading.Thread(target=run_crew)
         thread.start()
+
+        # Intro message
+        yield ("token", f"Here's your travel plan for {travel_context.destination}!\n\n")
 
         # Stream outputs as they arrive
         while True:
             await asyncio.sleep(0.1)
 
             while not output_queue.empty():
-                event_type, data = output_queue.get()
+                event_type, task_name, data = output_queue.get()
 
                 if event_type == "task_done" and data:
-                    # Emit status for current agent
-                    if current_agent_idx < len(agent_names):
-                        agent_name = agent_names[current_agent_idx]
-                        yield ("status", f"{agent_name} complete")
+                    # Parse JSON from agent output
+                    parsed_data = self._parse_agent_json(data)
 
-                        # Add section header
-                        if current_agent_idx < len(headers):
-                            yield ("token", f"\n\n{headers[current_agent_idx]}\n\n")
+                    if task_name == "highlights":
+                        yield ("status", "Research complete")
+                        if parsed_data:
+                            yield ("travel_highlights", parsed_data)
+                        else:
+                            # Fallback to text if JSON parsing fails
+                            yield ("token", f"\n## Destination Highlights\n\n{data}\n\n")
 
-                    # Stream content in chunks
-                    chunk_size = 50
-                    for i in range(0, len(data), chunk_size):
-                        chunk = data[i : i + chunk_size]
-                        yield ("token", chunk)
-                        await asyncio.sleep(0.01)
+                    elif task_name == "itinerary":
+                        yield ("status", "Itinerary complete")
+                        if parsed_data:
+                            yield ("travel_itinerary", parsed_data)
+                        else:
+                            yield ("token", f"\n## Sample Itinerary\n\n{data}\n\n")
 
-                    current_agent_idx += 1
+                    elif task_name == "budget":
+                        yield ("status", "Budget complete")
+                        if parsed_data:
+                            yield ("travel_budget", parsed_data)
+                        else:
+                            yield ("token", f"\n## Budget Estimate\n\n{data}\n\n")
 
                 elif event_type == "error":
                     yield ("error", f"Travel planning failed: {data}")
@@ -482,3 +526,31 @@ Provide:
 
             if not thread.is_alive() and output_queue.empty():
                 return
+
+    def _parse_agent_json(self, raw_output: str) -> dict | None:
+        """Parse JSON from agent output, handling markdown code blocks."""
+        try:
+            # Try direct JSON parse first
+            return json.loads(raw_output)
+        except json.JSONDecodeError:
+            pass
+
+        # Try extracting from markdown code block
+        import re
+        json_match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", raw_output)
+        if json_match:
+            try:
+                return json.loads(json_match.group(1))
+            except json.JSONDecodeError:
+                pass
+
+        # Try finding JSON object in text
+        json_match = re.search(r"\{[\s\S]*\}", raw_output)
+        if json_match:
+            try:
+                return json.loads(json_match.group(0))
+            except json.JSONDecodeError:
+                pass
+
+        logger.warning(f"Failed to parse JSON from agent output: {raw_output[:200]}...")
+        return None

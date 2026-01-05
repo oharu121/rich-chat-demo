@@ -24,6 +24,10 @@ export interface Message {
   questionnaire?: Questionnaire;  // Multi-step wizard questionnaire
   questionnaireSubmitted?: boolean;  // Track if questionnaire was submitted
   questionnaireAnswers?: Record<string, string | string[]>;  // Store submitted answers
+  // Rich travel UI data (displayed as separate bubbles)
+  travelHighlights?: TravelHighlightsData;
+  travelItinerary?: TravelItineraryData;
+  travelBudget?: TravelBudgetData;
 }
 
 // Slash command definition
@@ -115,7 +119,69 @@ export interface SSEQuestionnaireEvent {
   data: Questionnaire;
 }
 
-export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent | SSEQuestionsEvent | SSEQuestionnaireEvent;
+// Rich Travel UI Events - Structured data for enhanced travel output
+
+// Attraction for destination highlights carousel
+export interface TravelAttraction {
+  name: string;
+  description: string;
+  imageQuery: string;  // Search query for Unsplash (e.g., "Christ the Redeemer Rio")
+}
+
+export interface TravelHighlightsData {
+  destination: string;
+  bestTimeToVisit: string;
+  tips: string[];
+  attractions: TravelAttraction[];
+}
+
+export interface SSETravelHighlightsEvent {
+  type: "travel_highlights";
+  data: TravelHighlightsData;
+}
+
+// Itinerary day for timeline/accordion
+export interface ItineraryActivity {
+  time: "morning" | "afternoon" | "evening";
+  activity: string;
+  description?: string;
+}
+
+export interface ItineraryDay {
+  day: number;
+  title: string;  // e.g., "Rio de Janeiro"
+  activities: ItineraryActivity[];
+}
+
+export interface TravelItineraryData {
+  duration: string;
+  days: ItineraryDay[];
+}
+
+export interface SSETravelItineraryEvent {
+  type: "travel_itinerary";
+  data: TravelItineraryData;
+}
+
+// Budget breakdown for summary card
+export interface BudgetCategory {
+  category: string;
+  icon: string;  // emoji
+  range: string;  // e.g., "$800 - $1,200"
+}
+
+export interface TravelBudgetData {
+  totalRange: string;
+  categories: BudgetCategory[];
+  tip: string;
+}
+
+export interface SSETravelBudgetEvent {
+  type: "travel_budget";
+  data: TravelBudgetData;
+}
+
+export type SSEEvent = SSETokenEvent | SSEAgentEvent | SSEDoneEvent | SSEErrorEvent | SSEStatusEvent | SSESourcesEvent | SSEQuestionsEvent | SSEQuestionnaireEvent | SSETravelHighlightsEvent | SSETravelItineraryEvent | SSETravelBudgetEvent;
 
 // API response types
 export interface AgentInfo {
