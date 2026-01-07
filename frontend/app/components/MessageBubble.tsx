@@ -184,6 +184,45 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
     );
   }
 
+  // Check if this is a travel-only message (no text content, just travel data)
+  const isTravelHighlightsOnly = message.travelHighlights && !message.content && !message.isStreaming;
+  const isTravelItineraryOnly = message.travelItinerary && !message.content && !message.isStreaming;
+  const isTravelBudgetOnly = message.travelBudget && !message.content && !message.isStreaming;
+
+  // Render travel-only messages as standalone components (separate bubbles)
+  if (isTravelHighlightsOnly) {
+    return (
+      <div className="flex justify-start">
+        <div className="flex items-start gap-3 max-w-[90%]">
+          <MayaAvatar state="idling" size={56} />
+          <DestinationHighlights data={message.travelHighlights!} />
+        </div>
+      </div>
+    );
+  }
+
+  if (isTravelItineraryOnly) {
+    return (
+      <div className="flex justify-start">
+        <div className="flex items-start gap-3 max-w-[90%]">
+          <MayaAvatar state="idling" size={56} />
+          <ItineraryTimeline data={message.travelItinerary!} />
+        </div>
+      </div>
+    );
+  }
+
+  if (isTravelBudgetOnly) {
+    return (
+      <div className="flex justify-start">
+        <div className="flex items-start gap-3 max-w-[90%]">
+          <MayaAvatar state="idling" size={56} />
+          <BudgetSummary data={message.travelBudget!} />
+        </div>
+      </div>
+    );
+  }
+
   // Assistant message with avatar
   return (
     <div className="flex justify-start">

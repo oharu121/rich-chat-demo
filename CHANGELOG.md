@@ -5,16 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0]
+## [0.10.0] - 2026-01-07
 
 ### Added
 
-- **Rich Travel UI Enhancement** (planned): Design document for improved travel agent output
-  - Separate chat bubbles for Highlights, Itinerary, and Budget
-  - Image carousel for destination attractions using Unsplash URLs
-  - Accordion timeline for itinerary (mobile-friendly)
-  - Budget summary card with category breakdown
-  - See `.issues/rich-travel-ui-enhancement.md` for full design
+- **CrewAI Agent Tools**: Added tools to travel planning agents for external data operations
+  - `lookup_wikipedia_image` tool for Researcher agent - finds verified Wikipedia Commons image URLs
+  - `convert_currency` and `get_local_currency` tools for Budget agent - accurate currency handling with live rates
+  - Tools use graceful fallbacks on error (never raise exceptions, always return useful strings)
+  - New `backend/app/agents/tools/` module with reusable tool implementations
+
+### Technical
+
+- New files:
+  - `backend/app/agents/tools/__init__.py` - Tool exports
+  - `backend/app/agents/tools/image_lookup.py` - Wikipedia API integration with User-Agent header
+  - `backend/app/agents/tools/currency.py` - Exchange rate API with fallback rates for 17 currencies
+- Modified `backend/app/agents/travel_agent.py`:
+  - Imported tools from new module
+  - Attached `lookup_wikipedia_image` to Travel Researcher agent
+  - Attached `convert_currency` and `get_local_currency` to Budget Analyst agent
+- Documentation added to `.dev-notes/2026-01-06.md`
+
+## [0.9.0] - 2026-01-06
+
+### Added
+
+- **Rich Travel UI Enhancement**: Improved travel agent output with rich UI components
+  - Separate chat bubbles for Highlights, Itinerary, and Budget (progressive loading)
+  - Full-width single-slide image carousel for destination attractions
+  - Real Wikipedia Commons image URLs instead of placeholder API
+  - Each section appears as its own message as soon as its agent completes
+
+### Fixed
+
+- **Travel UI Rendering Bugs**: Fixed 5 critical issues from initial implementation
+  - Components no longer bundled in single bubble - each section is a separate message
+  - Images now use real Wikipedia Commons URLs instead of failing Unsplash Source API
+  - Results stream progressively instead of waiting for all agents to complete
+  - Improved JSON parsing with better logging for debugging
+  - Full-width carousel replaces tiny 208px cards
+
+### Changed
+
+- Frontend types: `imageQuery` renamed to `imageUrl` in `TravelAttraction` interface
+- `useChat.ts`: Travel events now use `addMessage()` instead of `updateLastMessage()`
+- `MessageBubble.tsx`: Handles travel-only messages (no text content) as standalone bubbles
+- `DestinationHighlights.tsx`: Complete redesign with single-slide carousel, navigation arrows, and dot indicators
+
+### Technical
+
+- Backend prompt updated to request real Wikipedia Commons URLs with examples
+- Added `_parse_agent_json()` task name parameter for better debugging
+- Documentation added to `.dev-notes/2026-01-06.md` and `.issues/rich-travel-ui-rendering-bugs.md`
 
 ## [0.8.3] - 2026-01-05
 

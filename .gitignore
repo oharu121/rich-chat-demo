@@ -19,7 +19,6 @@ node_modules
 
 # next.js
 .next/
-.classmethod
 /out/
 
 # production

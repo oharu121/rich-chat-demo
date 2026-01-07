@@ -122,17 +122,41 @@ export function useChat() {
 
           case "travel_highlights":
             setCurrentStatus(null);
-            updateLastMessage({ travelHighlights: event.data });
+            // Create a new message for highlights (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelHighlights: event.data,
+            });
             break;
 
           case "travel_itinerary":
             setCurrentStatus(null);
-            updateLastMessage({ travelItinerary: event.data });
+            // Create a new message for itinerary (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelItinerary: event.data,
+            });
             break;
 
           case "travel_budget":
             setCurrentStatus(null);
-            updateLastMessage({ travelBudget: event.data });
+            // Create a new message for budget (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelBudget: event.data,
+            });
             break;
 
           case "error": {
@@ -235,17 +259,41 @@ export function useChat() {
 
           case "travel_highlights":
             setCurrentStatus(null);
-            updateLastMessage({ travelHighlights: event.data });
+            // Create a new message for highlights (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelHighlights: event.data,
+            });
             break;
 
           case "travel_itinerary":
             setCurrentStatus(null);
-            updateLastMessage({ travelItinerary: event.data });
+            // Create a new message for itinerary (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelItinerary: event.data,
+            });
             break;
 
           case "travel_budget":
             setCurrentStatus(null);
-            updateLastMessage({ travelBudget: event.data });
+            // Create a new message for budget (separate bubble)
+            addMessage({
+              id: generateId(),
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              agent: responseAgent,
+              travelBudget: event.data,
+            });
             break;
 
           case "error": {

@@ -125,7 +125,7 @@ export interface SSEQuestionnaireEvent {
 export interface TravelAttraction {
   name: string;
   description: string;
-  imageQuery: string;  // Search query for Unsplash (e.g., "Christ the Redeemer Rio")
+  imageUrl: string;  // Direct URL to image (e.g., Wikipedia Commons)
 }
 
 export interface TravelHighlightsData {

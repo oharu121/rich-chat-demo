@@ -21,6 +21,7 @@ from google.genai import types
 from app.core.config import settings
 
 from .base import BaseAgent
+from .tools import convert_currency, get_local_currency, lookup_wikipedia_image
 from .travel_context import TravelContext
 
 logger = logging.getLogger(__name__)
@@ -291,11 +292,14 @@ Return ONLY the JSON array."""
             task_idx[0] += 1
 
         # Research Agent - returns structured highlights JSON
+        # Has lookup_wikipedia_image tool for finding verified image URLs
         researcher = Agent(
             role="Travel Researcher",
-            goal="Research key travel information and return structured JSON",
-            backstory="You provide destination highlights in JSON format. Focus on top 5 attractions with image search queries, best time to visit, and 2 local tips.",
+            goal="Research key travel information and return structured JSON with real image URLs",
+            backstory="""You provide destination highlights in JSON format. Focus on top 5 attractions, best time to visit, and 2 local tips.
+            Use the lookup_wikipedia_image tool to find real, working image URLs for each attraction.""",
             llm=llm,
+            tools=[lookup_wikipedia_image],
             verbose=False,
         )
 
@@ -309,11 +313,15 @@ Return ONLY the JSON array."""
         )
 
         # Budget Agent - returns structured budget JSON
+        # Has currency tools for accurate conversions
         budget_analyst = Agent(
             role="Budget Analyst",
             goal="Provide budget estimates and return structured JSON",
-            backstory="You give budget breakdowns in JSON format: flights, hotels, food, activities, and one money-saving tip.",
+            backstory="""You give budget breakdowns in JSON format: flights, hotels, food, activities, and one money-saving tip.
+            Use get_local_currency to find the destination's currency.
+            Use convert_currency for accurate currency conversions when needed.""",
             llm=llm,
+            tools=[convert_currency, get_local_currency],
             verbose=False,
         )
 
@@ -333,13 +341,21 @@ Return a JSON object with this EXACT structure:
     "bestTimeToVisit": "Month to Month (reason)",
     "tips": ["tip 1", "tip 2"],
     "attractions": [
-        {{"name": "Attraction Name", "description": "One sentence description", "imageQuery": "attraction name {context.destination}"}},
+        {{"name": "Attraction Name", "description": "One sentence description", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/..."}},
         ... (5 attractions total)
     ]
 }}
 
+For imageUrl, you MUST provide actual working image URLs. Use URLs from:
+- Wikipedia Commons (https://upload.wikimedia.org/wikipedia/commons/...)
+- These are real, publicly accessible image URLs that can be displayed directly
+
+Example real URLs:
+- Christ the Redeemer: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/800px-Christ_the_Redeemer_-_Cristo_Redentor.jpg"
+- Eiffel Tower: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg/800px-Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg"
+
 IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
-            expected_output="Valid JSON object with destination highlights",
+            expected_output="Valid JSON object with destination highlights including real Wikipedia Commons image URLs",
             agent=researcher,
         )
 
@@ -493,7 +509,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
 
                 if event_type == "task_done" and data:
                     # Parse JSON from agent output
-                    parsed_data = self._parse_agent_json(data)
+                    parsed_data = self._parse_agent_json(data, task_name)
 
                     if task_name == "highlights":
                         yield ("status", "Research complete")
@@ -527,20 +543,28 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
             if not thread.is_alive() and output_queue.empty():
                 return
 
-    def _parse_agent_json(self, raw_output: str) -> dict | None:
+    def _parse_agent_json(self, raw_output: str, task_name: str = "unknown") -> dict | None:
         """Parse JSON from agent output, handling markdown code blocks."""
+        import re
+
+        # Log raw output for debugging
+        logger.info(f"Raw output from {task_name} (first 500 chars): {raw_output[:500]}")
+
         try:
             # Try direct JSON parse first
-            return json.loads(raw_output)
+            result = json.loads(raw_output)
+            logger.info(f"Successfully parsed JSON for {task_name}")
+            return result
         except json.JSONDecodeError:
             pass
 
         # Try extracting from markdown code block
-        import re
         json_match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", raw_output)
         if json_match:
             try:
-                return json.loads(json_match.group(1))
+                result = json.loads(json_match.group(1))
+                logger.info(f"Successfully parsed JSON from code block for {task_name}")
+                return result
             except json.JSONDecodeError:
                 pass
 
@@ -548,9 +572,11 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation.""",
         json_match = re.search(r"\{[\s\S]*\}", raw_output)
         if json_match:
             try:
-                return json.loads(json_match.group(0))
+                result = json.loads(json_match.group(0))
+                logger.info(f"Successfully parsed JSON from embedded object for {task_name}")
+                return result
             except json.JSONDecodeError:
                 pass
 
-        logger.warning(f"Failed to parse JSON from agent output: {raw_output[:200]}...")
+        logger.error(f"Failed to parse JSON for {task_name}. Full output: {raw_output}")
         return None
