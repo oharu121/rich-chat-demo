@@ -66,7 +66,7 @@ function renderInlineFormatting(text: string, keyPrefix: string): React.ReactNod
       // Code match - remove ` markers
       const codeText = match[3].slice(1, -1);
       parts.push(
-        <code key={`${keyPrefix}-${match.index}`} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">
+        <code key={`${keyPrefix}-${match.index}`} className="px-1.5 py-0.5 bg-white/10 rounded text-sm font-mono text-blue-300">
           {codeText}
         </code>
       );
@@ -105,10 +105,10 @@ function renderContent(content: string): React.ReactNode {
       const headerText = headerMatch[2];
 
       const headerClasses = {
-        1: "text-xl font-bold text-gray-900 mt-4 mb-2",
-        2: "text-lg font-semibold text-gray-800 mt-3 mb-2",
-        3: "text-base font-semibold text-gray-700 mt-2 mb-1",
-      }[level] || "text-base font-semibold text-gray-700 mt-2 mb-1";
+        1: "text-xl font-bold text-white mt-4 mb-2",
+        2: "text-lg font-semibold text-gray-100 mt-3 mb-2",
+        3: "text-base font-semibold text-gray-200 mt-2 mb-1",
+      }[level] || "text-base font-semibold text-gray-200 mt-2 mb-1";
 
       elements.push(
         <div key={`h-${i}`} className={headerClasses}>
@@ -127,7 +127,7 @@ function renderContent(content: string): React.ReactNode {
 
       elements.push(
         <div key={`li-${i}`} className={`flex items-start gap-2 ${marginLeft}`}>
-          <span className="text-gray-400 mt-1">•</span>
+          <span className="text-blue-400 mt-1">•</span>
           <span>{renderInlineFormatting(bulletText, `li-${i}`)}</span>
         </div>
       );
@@ -228,7 +228,7 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
     <div className="flex justify-start">
       <div className="flex items-start gap-3 max-w-[90%]">
         <MayaAvatar state={avatarState} size={56} />
-        <div className="bg-white text-gray-800 rounded-2xl rounded-tl-md shadow-md border border-gray-100 px-5 py-3.5 transition-all duration-200 hover:shadow-lg">
+        <div className="glass-bubble text-gray-100 rounded-2xl rounded-tl-md shadow-md px-5 py-3.5">
           {/* Agent badge */}
           {message.agent && (
             <div className="mb-2">
@@ -237,7 +237,7 @@ export function MessageBubble({ message, statusMessage, onQuestionSubmit }: Mess
           )}
 
           {/* Message content */}
-          <div className="wrap-break-word leading-relaxed text-gray-700">
+          <div className="wrap-break-word leading-relaxed text-gray-200">
             {renderContent(message.content)}
             {message.isStreaming && (
               <span className="inline-block w-0.5 h-5 ml-1 bg-current animate-typing-cursor rounded-full" />

@@ -81,15 +81,22 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-linear-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="flex flex-col h-screen">
+      {/* Floating Orbs Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="floating-orb absolute top-1/4 left-[16%] w-48 h-48 bg-linear-to-r from-blue-400/35 to-indigo-400/35 rounded-full blur-3xl" />
+        <div className="floating-orb absolute top-3/4 right-1/4 w-36 h-36 bg-linear-to-r from-indigo-400/35 to-purple-400/35 rounded-full blur-3xl" />
+        <div className="floating-orb absolute top-1/2 right-[16%] w-28 h-28 bg-linear-to-r from-blue-300/35 to-cyan-300/35 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <header className="shrink-0 glass border-b border-white/20 shadow-sm sticky top-0 z-30">
+      <header className="shrink-0 glass-header shadow-sm sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="animate-fade-in">
-            <h1 className="text-2xl font-bold bg-linear-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold text-white">
               {UI_TEXT.appTitle}
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-400 mt-0.5">
               {UI_TEXT.appSubtitle}
             </p>
           </div>
@@ -98,8 +105,8 @@ export function ChatInterface() {
               <button
                 onClick={handleClearMessages}
                 className="group flex items-center gap-2 px-4 py-2 text-sm font-medium
-                         text-gray-600 bg-white/80 rounded-xl border border-gray-200/60
-                         hover:bg-white hover:border-gray-300 hover:text-gray-900
+                         text-gray-300 bg-white/10 rounded-xl border border-white/10
+                         hover:bg-white/20 hover:border-white/20 hover:text-white
                          active:scale-[0.98] transition-all duration-200"
               >
                 <svg
@@ -199,10 +206,10 @@ export function ChatInterface() {
                   </svg>
                 </div>
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-2xl font-semibold text-white mb-2">
                 {UI_TEXT.welcomeMessage}
               </h2>
-              <p className="text-gray-500 max-w-md mx-auto leading-relaxed mb-8">
+              <p className="text-gray-400 max-w-md mx-auto leading-relaxed mb-8">
                 {UI_TEXT.welcomeDescription}
               </p>
 
@@ -214,12 +221,12 @@ export function ChatInterface() {
                     onClick={() => {
                       chatInputRef.current?.selectCommand(cmd);
                     }}
-                    className="px-4 py-2.5 text-sm text-gray-600 bg-white border border-gray-200
-                             rounded-xl hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50
+                    className="px-4 py-2.5 text-sm text-gray-300 bg-white/5 border border-white/10
+                             rounded-xl hover:border-blue-400/50 hover:text-blue-400 hover:bg-white/10
                              hover:shadow-md transition-all duration-200"
                   >
                     <span className="font-medium">{cmd.command}</span>
-                    <span className="text-gray-400 ml-2">{cmd.description}</span>
+                    <span className="text-gray-500 ml-2">{cmd.description}</span>
                   </button>
                 ))}
               </div>

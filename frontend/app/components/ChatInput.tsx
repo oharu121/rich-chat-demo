@@ -122,7 +122,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
   const canSend = input.trim() && !disabled;
 
   return (
-    <div className="glass border-t border-white/20 p-4 shadow-lg shadow-gray-200/50">
+    <div className="p-4">
       <div className="max-w-4xl mx-auto">
         <div className="relative">
           {/* Slash command menu */}
@@ -134,10 +134,10 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
           />
 
           <div
-            className={`relative flex flex-col bg-white rounded-2xl border-2 transition-all duration-200 ${
+            className={`relative flex flex-col glass-bubble rounded-2xl border transition-all duration-200 ${
               isFocused
-                ? "border-blue-400 shadow-lg shadow-blue-100/50"
-                : "border-gray-200 hover:border-gray-300"
+                ? "border-blue-400/50 shadow-lg shadow-blue-500/20"
+                : "border-white/10 hover:border-white/20"
             }`}
           >
             {/* Command chip row - appears above input */}
@@ -174,9 +174,9 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
                   placeholder={UI_TEXT.inputPlaceholder}
                   disabled={disabled}
                   rows={1}
-                  className="w-full resize-none bg-transparent px-3 py-2.5 text-base
-                           disabled:text-gray-400
-                           placeholder:text-gray-400"
+                  className="w-full resize-none bg-transparent px-3 py-2.5 text-base text-white
+                           disabled:text-gray-500
+                           placeholder:text-gray-500"
                   style={{
                     minHeight: "44px",
                     maxHeight: "150px",
@@ -190,7 +190,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
                          transition-all duration-200 ${
                            canSend
                              ? "bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105 active:scale-95"
-                             : "bg-gray-100 text-gray-400"
+                             : "bg-white/10 text-gray-500"
                          }`}
                 aria-label="Send"
               >
@@ -207,19 +207,19 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(function ChatI
             </div>
           </div>
         </div>
-        <p className="mt-2.5 text-xs text-gray-400 text-center flex items-center justify-center gap-2">
+        <p className="mt-2.5 text-xs text-gray-500 text-center flex items-center justify-center gap-2">
           <span>Type</span>
-          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[10px]">
+          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-400 font-mono text-[10px]">
             /
           </kbd>
           <span>for commands</span>
-          <span className="text-gray-300">|</span>
-          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[10px]">
+          <span className="text-gray-600">|</span>
+          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-400 font-mono text-[10px]">
             Enter
           </kbd>
           <span>to send</span>
-          <span className="text-gray-300">|</span>
-          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[10px]">
+          <span className="text-gray-600">|</span>
+          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-400 font-mono text-[10px]">
             Shift+Enter
           </kbd>
           <span>for new line</span>
