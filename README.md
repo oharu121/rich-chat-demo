@@ -42,6 +42,7 @@ rich-chat-demo/
 ### Prerequisites
 
 - Node.js 20+
+- pnpm 10+
 - Python 3.12+
 - uv (Python package manager)
 
@@ -49,16 +50,16 @@ rich-chat-demo/
 
 ```bash
 # Install root dependencies
-npm install
+pnpm install
 
 # Install frontend dependencies
-npm --prefix frontend install
+pnpm -C frontend install
 
 # Install backend dependencies
 cd backend && uv sync && cd ..
 
 # Run both frontend and backend
-npm run dev
+pnpm run dev
 ```
 
 This starts:
@@ -76,7 +77,7 @@ uv run uvicorn main:app --reload --port 7860
 **Frontend:**
 ```bash
 cd frontend
-npm run dev
+pnpm run dev
 ```
 
 ## Slash Commands
@@ -104,13 +105,13 @@ Type `/` in the chat input to see the autocomplete menu.
 
 ```bash
 # Check both frontend and backend
-npm run typecheck
+pnpm run typecheck
 
 # Frontend only
-npm run typecheck:frontend
+pnpm run typecheck:frontend
 
 # Backend only
-npm run typecheck:backend
+pnpm run typecheck:backend
 ```
 
 ### Adding New Agents

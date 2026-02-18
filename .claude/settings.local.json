@@ -4,11 +4,14 @@
       "Bash(dir:*)",
       "Bash(cat:*)",
       "Bash(uv run:*)",
-      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
       "Bash(mkdir:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(pnpm run typecheck:*)",
+      "Bash(test:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm config get:*)"
     ]
   }
 }
