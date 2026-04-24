@@ -5,7 +5,7 @@ description = "SSE streaming chat API with slash command agent routing"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.136.1",
-    "uvicorn[standard]>=0.44.0",
+    "uvicorn[standard]>=0.46.0",
     "pydantic>=2.13.3",
     "google-genai>=1.73.1",
     "python-dotenv>=1.2.2",
