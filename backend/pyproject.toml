@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "SSE streaming chat API with slash command agent routing"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.137.2",
+    "fastapi>=0.138.1",
     "uvicorn[standard]>=0.49.0",
     "pydantic>=2.13.4",
-    "google-genai>=2.9.0",
+    "google-genai>=2.10.0",
     "python-dotenv>=1.2.2",
     "aiohttp>=3.14.1",
     "crewai>=0.86.0",
@@ -24,7 +24,7 @@ packages = ["app"]
 
 [dependency-groups]
 dev = [
-    "pyright>=1.1.410",
+    "pyright>=1.1.411",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "httpx>=0.28",
